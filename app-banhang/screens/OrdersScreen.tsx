@@ -5,11 +5,13 @@ import {
   FlatList, 
   StyleSheet, 
   TouchableOpacity, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Button
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchOrders } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 type RootStackParamList = {
   OrdersScreen: undefined;
@@ -22,7 +24,7 @@ interface Order {
   id: number;
   user_name: string;
   address: string;
-  total_price: number;
+  total_price: number | string | undefined; // Allow for string or undefined
   created_at: string;
 }
 
@@ -31,6 +33,7 @@ const OrdersScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { logout } = useAuth();
 
   useEffect(() => {
     loadOrders();
@@ -40,6 +43,7 @@ const OrdersScreen: React.FC = () => {
     try {
       setLoading(true);
       const data = await fetchOrders();
+      console.log('Orders data:', data); // Debug the data
       setOrders(data);
       setError(null);
     } catch (err) {
@@ -47,6 +51,14 @@ const OrdersScreen: React.FC = () => {
       setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
@@ -59,6 +71,12 @@ const OrdersScreen: React.FC = () => {
       minute: '2-digit'
     };
     return new Date(dateString).toLocaleDateString('vi-VN', options);
+  };
+
+  const formatPrice = (price: number | string | undefined): string => {
+    if (price === undefined || price === null) return '0.00';
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
   const renderItem = ({ item }: { item: Order }) => (
@@ -79,7 +97,7 @@ const OrdersScreen: React.FC = () => {
       </View>
       
       <View style={styles.orderFooter}>
-        <Text style={styles.orderTotal}>Tổng tiền: ${item.total_price.toFixed(2)}</Text>
+        <Text style={styles.orderTotal}>Tổng tiền: ${formatPrice(item.total_price)}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -112,14 +130,18 @@ const OrdersScreen: React.FC = () => {
   }
 
   return (
-    <FlatList
-      style={styles.container}
-      data={orders}
-      renderItem={renderItem}
-      keyExtractor={(item) => item.id.toString()}
-      refreshing={loading}
-      onRefresh={loadOrders}
-    />
+    <View style={styles.container}>
+      <FlatList
+        data={orders}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        refreshing={loading}
+        onRefresh={loadOrders}
+      />
+      <View style={styles.logoutContainer}>
+        <Button title="Đăng Xuất" onPress={handleLogout} />
+      </View>
+    </View>
   );
 };
 
@@ -200,6 +222,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  logoutContainer: {
+    padding: 20,
   },
 });
 

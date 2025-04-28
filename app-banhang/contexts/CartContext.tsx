@@ -41,7 +41,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Fetch products when component mounts
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://192.168.52.114:3000/products');
+        const response = await axios.get('http://192.168.43.49:3000/products');
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);

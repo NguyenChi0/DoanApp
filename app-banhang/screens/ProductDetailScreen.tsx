@@ -3,13 +3,24 @@ import { View, Text, Image, StyleSheet, Button } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import axios from 'axios';
+import { fetchProductById } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 
-// Define the navigation param list
+// Define the nested tab navigator param list
+type TabParamList = {
+  Home: undefined;
+  Cart: undefined;
+  Orders: undefined;
+};
+
+// Define the root stack navigator param list
 type RootStackParamList = {
-  Tabs: undefined;
+  Tabs: { screen?: keyof TabParamList };
   ProductDetailScreen: { productId: string };
+  CheckoutScreen: undefined;
+  OrderDetailScreen: { orderId: string };
+  Login: undefined;
+  Register: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -31,15 +42,16 @@ const ProductDetailScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        // Use the same IP address that's being used in other files (192.168.52.114)
-        const response = await axios.get(`http://192.168.52.114:3000/products/${productId}`);
-        setProduct(response.data);
+        const response = await fetchProductById(Number(productId));
+        setProduct(response);
       } catch (error) {
         console.error('Error fetching product:', error);
+        setError('Không thể tải sản phẩm. Vui lòng thử lại.');
       }
     };
     fetchProduct();
@@ -57,6 +69,7 @@ const ProductDetailScreen: React.FC = () => {
     }
   };
 
+  if (error) return <Text style={styles.error}>{error}</Text>;
   if (!product) return <Text>Loading...</Text>;
 
   return (
@@ -78,6 +91,7 @@ const styles = StyleSheet.create({
   description: { fontSize: 16, marginBottom: 10 },
   price: { fontSize: 20, color: 'green', marginBottom: 10 },
   stock: { fontSize: 16, marginBottom: 10 },
+  error: { color: 'red', textAlign: 'center', marginTop: 20 },
 });
 
 export default ProductDetailScreen;

@@ -1,81 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  StyleSheet, 
+  ActivityIndicator, 
   Image,
-  TouchableOpacity,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchOrderById } from '../services/api';
 
+// Define the navigation param list
 type RootStackParamList = {
+  OrdersScreen: undefined;
   OrderDetailScreen: { orderId: string };
 };
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDetailScreen'>;
 type RouteProps = RouteProp<RootStackParamList, 'OrderDetailScreen'>;
+
+// Define the Order and OrderItem types based on backend response
+interface Order {
+  id: number;
+  user_name: string;
+  address: string;
+  total_price: number | string | undefined;
+  created_at: string;
+}
 
 interface OrderItem {
   id: number;
   order_id: number;
   product_id: number;
   quantity: number;
-  price: number;
+  price: number | string | undefined;
   product_name: string;
-  product_image: string;
-}
-
-interface Order {
-  id: number;
-  user_name: string;
-  address: string;
-  total_price: number;
-  created_at: string;
-}
-
-interface OrderDetail {
-  order: Order;
-  items: OrderItem[];
+  product_image: string | null;
 }
 
 const OrderDetailScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
   const { orderId } = route.params;
-  const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
+  const navigation = useNavigation<NavigationProp>();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [items, setItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOrderDetail();
+    const loadOrderDetails = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchOrderById(Number(orderId));
+        console.log('Order details:', data); // Debug the data
+        setOrder(data.order);
+        setItems(data.items);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching order details:', err);
+        setError('Không thể tải chi tiết đơn hàng. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOrderDetails();
   }, [orderId]);
 
-  const loadOrderDetail = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchOrderById(parseInt(orderId));
-      setOrderDetail(data);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching order details:', err);
-      setError('Không thể tải thông tin đơn hàng. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
+      minute: '2-digit'
     };
     return new Date(dateString).toLocaleDateString('vi-VN', options);
   };
+
+  const formatPrice = (price: number | string | undefined): string => {
+    if (price === undefined || price === null) return '0.00';
+    const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+    return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
+  };
+
+  const renderItem = ({ item }: { item: OrderItem }) => (
+    <View style={styles.itemContainer}>
+      {item.product_image ? (
+        <Image source={{ uri: item.product_image }} style={styles.itemImage} />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <Text style={styles.placeholderText}>No Image</Text>
+        </View>
+      )}
+      <View style={styles.itemDetails}>
+        <Text style={styles.itemName}>{item.product_name}</Text>
+        <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
+        <Text style={styles.itemPrice}>Đơn giá: ${formatPrice(item.price)}</Text>
+        <Text style={styles.itemTotal}>
+          Tổng: ${(Number(item.quantity) * Number(formatPrice(item.price))).toFixed(2)}
+        </Text>
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -85,67 +113,35 @@ const OrderDetailScreen: React.FC = () => {
     );
   }
 
-  if (error || !orderDetail) {
+  if (error || !order) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>{error || 'Không tìm thấy đơn hàng'}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadOrderDetail}>
-          <Text style={styles.retryButtonText}>Thử lại</Text>
-        </TouchableOpacity>
+        <Text style={styles.errorText}>{error || 'Đơn hàng không tồn tại.'}</Text>
       </View>
     );
   }
 
-  const { order, items } = orderDetail;
-
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Chi tiết đơn hàng #{order.id}</Text>
-          <Text style={styles.headerDate}>{formatDate(order.created_at)}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin người nhận</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Họ tên:</Text>
-            <Text style={styles.infoValue}>{order.user_name}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Địa chỉ:</Text>
-            <Text style={styles.infoValue}>{order.address}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danh sách sản phẩm</Text>
-          {items.map((item) => (
-            <View key={item.id} style={styles.productItem}>
-              <Image
-                source={{ uri: item.product_image || 'https://via.placeholder.com/50' }}
-                style={styles.productImage}
-              />
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{item.product_name}</Text>
-                <View style={styles.productDetails}>
-                  <Text style={styles.productPrice}>${item.price.toFixed(2)}</Text>
-                  <Text style={styles.productQuantity}>x{item.quantity}</Text>
-                </View>
-                <Text style={styles.productTotal}>
-                  ${(item.price * item.quantity).toFixed(2)}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.totalSection}>
-          <Text style={styles.totalLabel}>Tổng thanh toán:</Text>
-          <Text style={styles.totalValue}>${order.total_price.toFixed(2)}</Text>
-        </View>
+    <View style={styles.container}>
+      <View style={styles.orderHeader}>
+        <Text style={styles.orderId}>Đơn hàng #{order.id}</Text>
+        <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
       </View>
-    </ScrollView>
+      
+      <View style={styles.orderDetails}>
+        <Text style={styles.userName}>Khách hàng: {order.user_name}</Text>
+        <Text style={styles.orderAddress}>Địa chỉ: {order.address}</Text>
+        <Text style={styles.orderTotal}>Tổng tiền: ${formatPrice(order.total_price)}</Text>
+      </View>
+
+      <Text style={styles.itemsHeader}>Sản phẩm trong đơn hàng:</Text>
+      <FlatList
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        style={styles.itemsList}
+      />
+    </View>
   );
 };
 
@@ -153,6 +149,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f8f8',
+    padding: 16,
   },
   centered: {
     flex: 1,
@@ -160,126 +157,119 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  card: {
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
     backgroundColor: 'white',
+    padding: 12,
     borderRadius: 8,
-    padding: 16,
-    margin: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 10,
-  },
-  headerTitle: {
+  orderId: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#4B0082',
   },
-  headerDate: {
-    fontSize: 12,
+  orderDate: {
+    fontSize: 14,
     color: '#666',
   },
-  section: {
-    marginBottom: 20,
+  orderDetails: {
+    backgroundColor: 'white',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  sectionTitle: {
+  userName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  infoRow: {
-    flexDirection: 'row',
     marginBottom: 8,
   },
-  infoLabel: {
-    width: 80,
-    fontWeight: '500',
+  orderAddress: {
+    fontSize: 16,
     color: '#555',
+    marginBottom: 8,
   },
-  infoValue: {
-    flex: 1,
-    color: '#333',
+  orderTotal: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'green',
   },
-  productItem: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingVertical: 10,
+  itemsHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
-  productImage: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
-    borderRadius: 4,
-  },
-  productInfo: {
+  itemsList: {
     flex: 1,
   },
-  productName: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  productDetails: {
+  itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  productPrice: {
-    color: '#666',
+  itemImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
   },
-  productQuantity: {
-    color: '#666',
-  },
-  productTotal: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B0082',
-    alignSelf: 'flex-end',
-  },
-  totalSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  placeholderImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#e0e0e0',
+    justifyContent: 'center',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 16,
-    marginTop: 10,
+    marginRight: 12,
   },
-  totalLabel: {
+  placeholderText: {
+    color: '#666',
+    fontSize: 12,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
-  totalValue: {
-    fontSize: 18,
+  itemQuantity: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
+  },
+  itemPrice: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
+  },
+  itemTotal: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: 'green',
   },
   errorText: {
     color: 'red',
     textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#4B0082',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: '500',
+    fontSize: 16,
   },
 });
 
