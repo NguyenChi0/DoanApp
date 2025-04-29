@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CartProvider } from './contexts/CartContext';
@@ -14,10 +14,40 @@ import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// Định nghĩa kiểu cho navigation
+type RootStackParamList = {
+  Tabs: undefined;
+  ProductDetailScreen: { productId: string };
+  CheckoutScreen: undefined;
+  OrderDetailScreen: { orderId: string };
+  Login: undefined;
+  Register: undefined;
+};
+
+// Thành phần con để hiển thị nút "Đăng Nhập" trong header
+const LoginButton = () => {
+  const { token } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  if (token) return null; // Không hiển thị nút nếu đã đăng nhập
+
+  return (
+    <TouchableOpacity
+      style={{ marginRight: 15 }}
+      onPress={() => navigation.navigate('Login')}
+    >
+      <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
+        Đăng Nhập
+      </Text>
+    </TouchableOpacity>
+  );
+};
 
 const TabNavigator = () => {
   return (
@@ -64,6 +94,8 @@ const TabNavigator = () => {
               color={color} 
             />
           ),
+          // Sử dụng thành phần LoginButton trong headerRight
+          headerRight: () => <LoginButton />,
         }}
       />
       <Tab.Screen 
@@ -117,19 +149,12 @@ const AppNavigator = () => {
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
-      {token ? (
-        <>
-          <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
-          <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
-          <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} options={{ title: 'Thanh toán' }} />
-          <Stack.Screen name="OrderDetailScreen" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Đăng Nhập' }} />
-          <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Đăng Ký' }} />
-        </>
-      )}
+      <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
+      <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} options={{ title: 'Thanh toán' }} />
+      <Stack.Screen name="OrderDetailScreen" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Đăng Nhập' }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Đăng Ký' }} />
     </Stack.Navigator>
   );
 };

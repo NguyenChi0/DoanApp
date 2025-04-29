@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, Button, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, Button, StyleSheet, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext'; // Thêm useAuth để kiểm tra đăng nhập
 import { createOrder } from '../services/api';
 
+// Cập nhật RootStackParamList để bao gồm Login
 type RootStackParamList = {
   CheckoutScreen: undefined;
   HomeScreen: undefined;
+  Login: undefined; // Thêm Login
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -22,15 +25,31 @@ interface CartItem {
 const CheckoutScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { cartItems, removeFromCart, setCartItems } = useCart();
+  const { token } = useAuth(); // Lấy token để kiểm tra trạng thái đăng nhập
   const [address, setAddress] = useState('');
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleCheckout = async () => {
+    // Kiểm tra nếu chưa đăng nhập
+    if (!token) {
+      Alert.alert(
+        'Yêu cầu đăng nhập',
+        'Bạn cần đăng nhập để đặt hàng. Đăng nhập ngay?',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { text: 'Đăng Nhập', onPress: () => navigation.navigate('Login') },
+        ]
+      );
+      return;
+    }
+
+    // Nếu đã đăng nhập, tiếp tục kiểm tra địa chỉ
     if (!address) {
       alert('Vui lòng nhập địa chỉ giao hàng.');
       return;
     }
+
     try {
       await createOrder(address, cartItems);
       alert('Đặt hàng thành công!');

@@ -4,10 +4,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 
-// Define the navigation param list
+// Cập nhật RootStackParamList để bao gồm Tabs
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
+  Tabs: undefined; // Thêm Tabs thay vì Home
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -21,6 +22,8 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     try {
       await login(username, password);
+      // Điều hướng đến Tabs thay vì Home
+      navigation.navigate('Tabs');
     } catch (error) {
       alert('Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
     }

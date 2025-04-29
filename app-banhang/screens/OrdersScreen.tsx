@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 type RootStackParamList = {
   OrdersScreen: undefined;
   OrderDetailScreen: { orderId: string };
+  Login: undefined; // Thêm Login vào RootStackParamList
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -24,26 +25,30 @@ interface Order {
   id: number;
   user_name: string;
   address: string;
-  total_price: number | string | undefined; // Allow for string or undefined
+  total_price: number | string | undefined;
   created_at: string;
 }
 
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { token, logout } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { logout } = useAuth();
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    if (token) {
+      loadOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
       const data = await fetchOrders();
-      console.log('Orders data:', data); // Debug the data
+      console.log('Orders data:', data);
       setOrders(data);
       setError(null);
     } catch (err) {
@@ -102,6 +107,15 @@ const OrdersScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  if (!token) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>Bạn cần đăng nhập để xem đơn hàng</Text>
+        <Button title="Đăng Nhập" onPress={() => navigation.navigate('Login')} />
+      </View>
+    );
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -125,6 +139,7 @@ const OrdersScreen: React.FC = () => {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyText}>Bạn chưa có đơn hàng nào</Text>
+        <Button title="Đăng Xuất" onPress={handleLogout} />
       </View>
     );
   }
@@ -222,6 +237,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+    marginBottom: 20,
   },
   logoutContainer: {
     padding: 20,

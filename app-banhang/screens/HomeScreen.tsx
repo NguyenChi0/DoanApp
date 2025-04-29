@@ -7,6 +7,7 @@ import { useCart } from '../contexts/CartContext';
 type RootStackParamList = {
   HomeScreen: undefined;
   ProductDetailScreen: { productId: string };
+  Login: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   item: { padding: 10, borderBottomWidth: 1, borderBottomColor: '#ccc' },
   name: { fontSize: 18, fontWeight: 'bold' },
-  price: { fontSize: 16, color: 'green' }, // Ensure this is defined
+  price: { fontSize: 16, color: 'green' },
 });
 
 export default HomeScreen;
