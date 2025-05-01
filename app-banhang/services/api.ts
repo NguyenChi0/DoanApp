@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.43.49:3000';
+const API_URL = 'http://192.168.1.7:3000';
 
 interface CartItem {
   id: string;
@@ -17,13 +17,20 @@ interface UserData {
   address?: string;
 }
 
-export const fetchProducts = async () => {
-  const response = await axios.get(`${API_URL}/products`);
+export const fetchProducts = async (categoryId?: number) => {
+  const response = await axios.get(`${API_URL}/products`, {
+    params: categoryId ? { category_id: categoryId } : {},
+  });
   return response.data;
 };
 
 export const fetchProductById = async (id: number) => {
   const response = await axios.get(`${API_URL}/products/${id}`);
+  return response.data;
+};
+
+export const fetchCategories = async () => {
+  const response = await axios.get(`${API_URL}/categories`);
   return response.data;
 };
 
@@ -49,5 +56,12 @@ export const register = async (userData: UserData) => {
 
 export const login = async (username: string, password: string) => {
   const response = await axios.post(`${API_URL}/login`, { username, password });
+  return response.data;
+};
+
+export const updateUser = async (id: number, userData: Partial<UserData>, token: string) => {
+  const response = await axios.put(`${API_URL}/users/${id}`, userData, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return response.data;
 };

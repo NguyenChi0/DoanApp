@@ -12,6 +12,7 @@ import OrdersScreen from './screens/OrdersScreen';
 import OrderDetailScreen from './screens/OrderDetailScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import AccountScreen from './screens/AccountScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
@@ -28,6 +29,7 @@ type RootStackParamList = {
   OrderDetailScreen: { orderId: string };
   Login: undefined;
   Register: undefined;
+  Account: undefined;
 };
 
 // Thành phần con để hiển thị nút "Đăng Nhập" trong header
@@ -94,7 +96,6 @@ const TabNavigator = () => {
               color={color} 
             />
           ),
-          // Sử dụng thành phần LoginButton trong headerRight
           headerRight: () => <LoginButton />,
         }}
       />
@@ -120,6 +121,20 @@ const TabNavigator = () => {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'receipt' : 'receipt-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="Account" 
+        component={AccountScreen} 
+        options={{
+          title: 'Tài khoản',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'person' : 'person-outline'} 
               size={size} 
               color={color} 
             />
@@ -155,6 +170,7 @@ const AppNavigator = () => {
       <Stack.Screen name="OrderDetailScreen" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Đăng Nhập' }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Đăng Ký' }} />
+      <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Tài khoản' }} />
     </Stack.Navigator>
   );
 };

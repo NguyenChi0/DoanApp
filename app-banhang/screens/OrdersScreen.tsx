@@ -31,7 +31,7 @@ interface Order {
 
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,14 +56,6 @@ const OrdersScreen: React.FC = () => {
       setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout error:', error);
     }
   };
 
@@ -139,7 +131,6 @@ const OrdersScreen: React.FC = () => {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyText}>Bạn chưa có đơn hàng nào</Text>
-        <Button title="Đăng Xuất" onPress={handleLogout} />
       </View>
     );
   }
@@ -153,9 +144,6 @@ const OrdersScreen: React.FC = () => {
         refreshing={loading}
         onRefresh={loadOrders}
       />
-      <View style={styles.logoutContainer}>
-        <Button title="Đăng Xuất" onPress={handleLogout} />
-      </View>
     </View>
   );
 };
@@ -238,10 +226,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 20,
-  },
-  logoutContainer: {
-    padding: 20,
-  },
+  }
 });
 
 export default OrdersScreen;

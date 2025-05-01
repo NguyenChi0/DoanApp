@@ -72,8 +72,54 @@ app.post('/login', (req, res) => {
       if (err) return res.status(500).json({ error: 'Error comparing passwords' });
       if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
       const token = jwt.sign({ userId: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
-      res.json({ token });
+      res.json({ token, user: { id: user.id, username: user.username, email: user.email, full_name: user.full_name, address: user.address } });
     });
+  });
+});
+
+// Update user endpoint
+app.put('/users/:id', authenticate, (req, res) => {
+  const userId = req.params.id;
+  const { full_name, address, email, password } = req.body;
+  if (req.userId !== parseInt(userId)) return res.status(403).json({ error: 'Unauthorized' });
+
+  let query = 'UPDATE users SET ';
+  const values = [];
+  const updates = [];
+
+  if (full_name) {
+    updates.push('full_name = ?');
+    values.push(full_name);
+  }
+  if (address) {
+    updates.push('address = ?');
+    values.push(address);
+  }
+  if (email) {
+    updates.push('email = ?');
+    values.push(email);
+  }
+  if (password) {
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) return res.status(500).json({ error: 'Error hashing password' });
+      updates.push('password = ?');
+      values.push(hashedPassword);
+      query += updates.join(', ') + ' WHERE id = ?';
+      values.push(userId);
+      db.query(query, values, (err, result) => {
+        if (err) return res.status(500).json({ error: 'Error updating user' });
+        res.json({ message: 'User updated successfully' });
+      });
+    });
+    return;
+  }
+
+  if (updates.length === 0) return res.status(400).json({ error: 'No updates provided' });
+  query += updates.join(', ') + ' WHERE id = ?';
+  values.push(userId);
+  db.query(query, values, (err, result) => {
+    if (err) return res.status(500).json({ error: 'Error updating user' });
+    res.json({ message: 'User updated successfully' });
   });
 });
 
@@ -82,9 +128,27 @@ app.get('/', (req, res) => {
   res.send('Server chạy ngon!');
 });
 
+// API lấy tất cả danh mục
+app.get('/categories', (req, res) => {
+  db.query('SELECT * FROM categories', (err, results) => {
+    if (err) {
+      res.status(500).json({ error: 'Lỗi server' });
+    } else {
+      res.json(results);
+    }
+  });
+});
+
 // API lấy tất cả sản phẩm (không cần auth)
 app.get('/products', (req, res) => {
-  db.query('SELECT * FROM products', (err, results) => {
+  const { category_id } = req.query;
+  let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id';
+  const values = [];
+  if (category_id) {
+    query += ' WHERE p.category_id = ?';
+    values.push(category_id);
+  }
+  db.query(query, values, (err, results) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else {
@@ -96,7 +160,7 @@ app.get('/products', (req, res) => {
 // API lấy chi tiết 1 sản phẩm (không cần auth)
 app.get('/products/:id', (req, res) => {
   const productId = req.params.id;
-  db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
+  db.query('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?', [productId], (err, result) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else if (result.length === 0) {

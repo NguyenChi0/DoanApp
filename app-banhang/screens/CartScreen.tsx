@@ -43,7 +43,7 @@ const CartScreen: React.FC = () => {
       />
       <Text style={styles.totals}>Total: ${total}</Text>
       <Button
-        title="Proceed to Checkout1"
+        title="Thanh toán"
         onPress={() => navigation.navigate('CheckoutScreen')}
         disabled={cartItems.length === 0}
       />

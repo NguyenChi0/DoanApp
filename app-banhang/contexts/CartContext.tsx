@@ -8,6 +8,11 @@ interface CartItem {
   price: number;
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 interface Product {
   id: number;
   name: string;
@@ -15,6 +20,8 @@ interface Product {
   image: string;
   description: string;
   stock: number;
+  category_id?: number;
+  category_name?: string;
 }
 
 interface CartContextType {
@@ -41,7 +48,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Fetch products when component mounts
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://192.168.43.49:3000/products');
+        const response = await axios.get('http://192.168.1.7:3000/products');
         setProducts(response.data);
       } catch (error) {
         console.error('Error fetching products:', error);
