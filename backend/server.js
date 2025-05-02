@@ -34,8 +34,17 @@ const authenticate = (req, res, next) => {
   jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Invalid token' });
     req.userId = decoded.userId;
+    req.userRole = decoded.role; // Include role in request
     next();
   });
+};
+
+// Admin middleware - check if user is admin
+const isAdmin = (req, res, next) => {
+  if (req.userRole !== 1) {
+    return res.status(403).json({ error: 'Admin permission required' });
+  }
+  next();
 };
 
 // Register endpoint
@@ -71,8 +80,18 @@ app.post('/login', (req, res) => {
     bcrypt.compare(password, user.password, (err, isMatch) => {
       if (err) return res.status(500).json({ error: 'Error comparing passwords' });
       if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
-      const token = jwt.sign({ userId: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
-      res.json({ token, user: { id: user.id, username: user.username, email: user.email, full_name: user.full_name, address: user.address } });
+      const token = jwt.sign({ userId: user.id, role: user.role }, 'your_jwt_secret', { expiresIn: '1h' });
+      res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          email: user.email, 
+          full_name: user.full_name, 
+          address: user.address,
+          role: user.role 
+        } 
+      });
     });
   });
 });
@@ -168,6 +187,46 @@ app.get('/products/:id', (req, res) => {
     } else {
       res.json(result[0]);
     }
+  });
+});
+
+// API thêm sản phẩm (chỉ admin)
+app.post('/products', authenticate, isAdmin, (req, res) => {
+  const { name, description, price, image, stock, category_id } = req.body;
+  
+  if (!name || !price) {
+    return res.status(400).json({ error: 'Tên và giá sản phẩm là bắt buộc' });
+  }
+  
+  const query = 'INSERT INTO products (name, description, price, image, stock, category_id) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [name, description, price, image, stock || 0, category_id], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server khi thêm sản phẩm' });
+    }
+    res.status(201).json({ id: result.insertId, message: 'Thêm sản phẩm thành công' });
+  });
+});
+
+// API xóa sản phẩm (chỉ admin)
+app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
+  const productId = req.params.id;
+  
+  // Kiểm tra xem sản phẩm có tồn tại không
+  db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server' });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+    }
+    
+    // Xóa sản phẩm nếu tồn tại
+    db.query('DELETE FROM products WHERE id = ?', [productId], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
+      }
+      res.json({ message: 'Xóa sản phẩm thành công' });
+    });
   });
 });
 
