@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { login, register } from '../services/api';
+import { login as apiLogin, register as apiRegister } from '../services/api';
 
 interface User {
   id: number;
@@ -36,15 +36,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Set up axios default authorization header whenever token changes
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
   useEffect(() => {
     const loadToken = async () => {
       try {
         const storedToken = await AsyncStorage.getItem('token');
         const storedUser = await AsyncStorage.getItem('user');
+        
         if (storedToken) {
           setToken(storedToken);
+          // Set axios default header here too
           axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         }
+        
         if (storedUser) {
           setUser(JSON.parse(storedUser));
         }
@@ -59,14 +71,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginUser = async (username: string, password: string) => {
     try {
-      const response = await login(username, password);
+      const response = await apiLogin(username, password);
       const newToken = response.token;
       const newUser = response.user;
+      
+      // Update state
       setToken(newToken);
       setUser(newUser);
+      
+      // Store in AsyncStorage
       await AsyncStorage.setItem('token', newToken);
       await AsyncStorage.setItem('user', JSON.stringify(newUser));
+      
+      // Set axios default header
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      return response;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -75,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerUser = async (userData: any) => {
     try {
-      await register(userData);
+      await apiRegister(userData);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -83,15 +103,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    setToken(null);
-    setUser(null);
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    delete axios.defaults.headers.common['Authorization'];
+    try {
+      // Clear state
+      setToken(null);
+      setUser(null);
+      
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      
+      // Clear axios default header
+      delete axios.defaults.headers.common['Authorization'];
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, setUser, login: loginUser, register: registerUser, logout, isLoading }}>
+    <AuthContext.Provider value={{ 
+      token, 
+      user, 
+      setUser, 
+      login: loginUser, 
+      register: registerUser, 
+      logout, 
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );
