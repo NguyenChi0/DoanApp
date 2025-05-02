@@ -96,3 +96,4 @@ export const updateUser = async (id: number, userData: Partial<UserData>) => {
   const response = await authAxios.put(`/users/${id}`, userData);
   return response.data;
 };
+

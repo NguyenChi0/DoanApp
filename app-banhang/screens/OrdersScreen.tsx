@@ -27,6 +27,7 @@ interface Order {
   address: string;
   total_price: number | string | undefined;
   created_at: string;
+  status: number; // Thêm trạng thái
 }
 
 const OrdersScreen: React.FC = () => {
@@ -76,6 +77,34 @@ const OrdersScreen: React.FC = () => {
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
+  // Hàm để hiển thị trạng thái đơn hàng dựa trên số
+  const getStatusText = (status: number): string => {
+    switch (status) {
+      case 0:
+        return 'Chờ xác nhận';
+      case 1:
+        return 'Đang vận chuyển';
+      case 2:
+        return 'Đã giao hàng';
+      default:
+        return 'Không xác định';
+    }
+  };
+
+  // Hàm để lấy màu sắc cho trạng thái
+  const getStatusColor = (status: number): string => {
+    switch (status) {
+      case 0:
+        return '#f39c12'; // Màu cam cho chờ xác nhận
+      case 1:
+        return '#3498db'; // Màu xanh dương cho đang vận chuyển
+      case 2:
+        return '#2ecc71'; // Màu xanh lá cho đã giao hàng
+      default:
+        return '#95a5a6'; // Màu xám cho không xác định
+    }
+  };
+
   const renderItem = ({ item }: { item: Order }) => (
     <TouchableOpacity
       style={styles.orderItem}
@@ -91,6 +120,11 @@ const OrdersScreen: React.FC = () => {
         <Text style={styles.orderAddress} numberOfLines={1}>
           Địa chỉ: {item.address}
         </Text>
+        
+        {/* Thêm hiển thị trạng thái đơn hàng */}
+        <View style={[styles.statusContainer, { backgroundColor: getStatusColor(item.status) }]}>
+          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+        </View>
       </View>
       
       <View style={styles.orderFooter}>
@@ -195,6 +229,21 @@ const styles = StyleSheet.create({
   orderAddress: {
     fontSize: 14,
     color: '#555',
+    marginBottom: 8, // Thêm khoảng cách trước hiển thị trạng thái
+  },
+  // Thêm style cho phần hiển thị trạng thái
+  statusContainer: {
+    alignSelf: 'flex-start',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   orderFooter: {
     borderTopWidth: 1,

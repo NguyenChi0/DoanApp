@@ -230,7 +230,7 @@ app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
-// API tạo đơn hàng (yêu cầu auth)
+// API tạo đơn hàng (yêu cầu auth) - với trạng thái
 app.post('/orders', authenticate, (req, res) => {
   const { address, cartItems } = req.body;
   const userId = req.userId;
@@ -241,7 +241,9 @@ app.post('/orders', authenticate, (req, res) => {
     const user = userResults[0];
     const shippingAddress = address || user.user_address;
     if (!shippingAddress) return res.status(400).json({ error: 'Shipping address is required' });
-    db.query('INSERT INTO orders (user_id, user_name, address, total_price) VALUES (?, ?, ?, ?)',
+    
+    // Thêm trạng thái mặc định là 0 (Chờ xác nhận)
+    db.query('INSERT INTO orders (user_id, user_name, address, total_price, status) VALUES (?, ?, ?, ?, 0)',
       [userId, user.full_name, shippingAddress, totalPrice],
       (err, result) => {
         if (err) return res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
@@ -256,7 +258,7 @@ app.post('/orders', authenticate, (req, res) => {
   });
 });
 
-// API lấy tất cả đơn hàng của user (yêu cầu auth)
+// Cập nhật API lấy tất cả đơn hàng của user (yêu cầu auth)
 app.get('/orders', authenticate, (req, res) => {
   const userId = req.userId;
   const query = `
@@ -265,7 +267,8 @@ app.get('/orders', authenticate, (req, res) => {
       o.user_name, 
       o.address, 
       o.total_price, 
-      o.created_at 
+      o.created_at,
+      o.status
     FROM orders o
     WHERE o.user_id = ?
     ORDER BY o.created_at DESC
@@ -276,7 +279,7 @@ app.get('/orders', authenticate, (req, res) => {
   });
 });
 
-// API lấy chi tiết 1 đơn hàng (yêu cầu auth)
+// Cập nhật API lấy chi tiết 1 đơn hàng (yêu cầu auth)
 app.get('/orders/:id', authenticate, (req, res) => {
   const orderId = req.params.id;
   const userId = req.userId;
@@ -298,6 +301,7 @@ app.get('/orders/:id', authenticate, (req, res) => {
     });
   });
 });
+
 
 app.get('/categories', (req, res) => {
   db.query('SELECT * FROM categories', (err, results) => {
