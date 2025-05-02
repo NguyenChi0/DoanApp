@@ -1,7 +1,7 @@
 // api.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.7:3000'; // Thay bằng IP LAN máy bạn
+const BASE_URL = 'http://192.168.1.7:3000';
 
 export const getToken = async () => {
   return await AsyncStorage.getItem('token');
@@ -17,7 +17,6 @@ export const clearToken = async () => {
 
 export const loginAdmin = async (username: string, password: string) => {
   try {
-    // Change from /admin/login to /login to match the server endpoint
     const res = await fetch(`${BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -30,12 +29,10 @@ export const loginAdmin = async (username: string, password: string) => {
       throw new Error(data.error || 'Đăng nhập thất bại');
     }
     
-    // Check if user is admin (role === 1)
     if (data.user?.role !== 1) {
       throw new Error('Tài khoản không có quyền admin');
     }
     
-    // Save token for future requests
     await setToken(data.token);
     
     return data;
@@ -118,6 +115,101 @@ export const deleteProduct = async (id: number) => {
     return data;
   } catch (error: any) {
     console.error('Delete product error:', error);
+    throw error;
+  }
+};
+
+export const fetchCategories = async () => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/categories`, {
+      headers: { 
+        Authorization: token ? `Bearer ${token}` : '' 
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải danh mục');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch categories error:', error);
+    throw error;
+  }
+};
+
+export const addCategory = async (category: { name: string }) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/categories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(category),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể thêm danh mục');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Add category error:', error);
+    throw error;
+  }
+};
+
+export const updateCategory = async (id: number, category: { name: string }) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/categories/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(category),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể cập nhật danh mục');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Update category error:', error);
+    throw error;
+  }
+};
+
+export const deleteCategory = async (id: number) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/categories/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể xóa danh mục');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Delete category error:', error);
     throw error;
   }
 };

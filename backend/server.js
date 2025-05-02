@@ -299,6 +299,50 @@ app.get('/orders/:id', authenticate, (req, res) => {
   });
 });
 
+app.get('/categories', (req, res) => {
+  db.query('SELECT * FROM categories', (err, results) => {
+    if (err) {
+      res.status(500).json({ error: 'Lỗi server' });
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+app.post('/categories', authenticate, isAdmin, (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Tên danh mục là bắt buộc' });
+  db.query('INSERT INTO categories (name) VALUES (?)', [name], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi thêm danh mục' });
+    res.status(201).json({ id: result.insertId, message: 'Thêm danh mục thành công' });
+  });
+});
+
+app.put('/categories/:id', authenticate, isAdmin, (req, res) => {
+  const categoryId = req.params.id;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Tên danh mục là bắt buộc' });
+  db.query('UPDATE categories SET name = ? WHERE id = ?', [name, categoryId], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi cập nhật danh mục' });
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy danh mục' });
+    res.json({ message: 'Cập nhật danh mục thành công' });
+  });
+});
+
+app.delete('/categories/:id', authenticate, isAdmin, (req, res) => {
+  const categoryId = req.params.id;
+  db.query('SELECT * FROM products WHERE category_id = ?', [categoryId], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server' });
+    if (result.length > 0) return res.status(400).json({ error: 'Không thể xóa danh mục có sản phẩm' });
+    db.query('DELETE FROM categories WHERE id = ?', [categoryId], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi server khi xóa danh mục' });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy danh mục' });
+      res.json({ message: 'Xóa danh mục thành công' });
+    });
+  });
+});
+
+
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);
 });

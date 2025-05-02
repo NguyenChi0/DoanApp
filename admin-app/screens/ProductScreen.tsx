@@ -29,13 +29,11 @@ type Product = {
   category_id: number;
 };
 
-// Don't use FC type to avoid the TypeScript error
 const ProductScreen = ({ navigation }: Props) => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  // Add logout button to header
   React.useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -81,7 +79,7 @@ const ProductScreen = ({ navigation }: Props) => {
             try {
               await deleteProduct(id);
               Alert.alert('Thành công', 'Đã xóa sản phẩm');
-              loadProducts(); // refresh list
+              loadProducts();
             } catch (error: any) {
               Alert.alert('Lỗi xóa', error.message || 'Không thể xóa sản phẩm');
             }
@@ -108,7 +106,6 @@ const ProductScreen = ({ navigation }: Props) => {
     );
   };
 
-  // Load products on component mount
   React.useEffect(() => {
     loadProducts();
   }, []);
@@ -163,6 +160,20 @@ const ProductScreen = ({ navigation }: Props) => {
           </View>
         }
       />
+
+      <TouchableOpacity 
+        style={styles.addProductButton} 
+        onPress={() => navigation.navigate('AddProduct')}
+      >
+        <Text style={styles.addProductButtonText}>Thêm sản phẩm mới</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.manageCategoriesButton} 
+        onPress={() => navigation.navigate('CategoriesManagement')}
+      >
+        <Text style={styles.manageCategoriesButtonText}>Quản lý danh mục</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -193,6 +204,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   productInfo: {
     flex: 1,
@@ -220,7 +233,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 12,
+    alignItems: 'center',
   },
   button: {
     paddingVertical: 8,
@@ -252,6 +265,30 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#f44336',
+    fontWeight: 'bold',
+  },
+  addProductButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  addProductButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  manageCategoriesButton: {
+    backgroundColor: '#2196F3',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  manageCategoriesButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
