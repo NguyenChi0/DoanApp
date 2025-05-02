@@ -141,6 +141,12 @@ const ProductScreen = ({ navigation }: Props) => {
             
             <View style={styles.actions}>
               <TouchableOpacity
+                style={[styles.button, styles.editButton]}
+                onPress={() => navigation.navigate('ProductEdit', { product: item })}
+              >
+                <Text style={styles.buttonText}>Sửa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={[styles.button, styles.deleteButton]}
                 onPress={() => handleDelete(item.id, item.name)}
               >
@@ -222,11 +228,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginLeft: 8,
   },
-  deleteButton: {
-    backgroundColor: '#f44336',
-  },
   editButton: {
     backgroundColor: '#2196F3',
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
   },
   buttonText: {
     color: '#fff',
