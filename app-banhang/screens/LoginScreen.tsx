@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-// Cập nhật RootStackParamList để bao gồm Tabs
+// Điều hướng
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  Tabs: undefined; // Thêm Tabs thay vì Home
+  Tabs: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -22,39 +30,108 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     try {
       await login(username, password);
-      // Điều hướng đến Tabs thay vì Home
       navigation.navigate('Tabs');
     } catch (error) {
       alert('Đăng nhập thất bại. Vui lòng kiểm tra thông tin.');
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Đăng Nhập</Text>
+  const renderInput = (
+    icon: string,
+    placeholder: string,
+    value: string,
+    setValue: (text: string) => void,
+    secure?: boolean
+  ) => (
+    <View style={styles.inputContainer}>
+      <Ionicons name={icon} size={22} color="#007ACC" style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Tên đăng nhập"
-        value={username}
-        onChangeText={setUsername}
+        placeholder={placeholder}
+        placeholderTextColor="#888"
+        value={value}
+        onChangeText={setValue}
+        secureTextEntry={secure}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Mật khẩu"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Đăng Nhập" onPress={handleLogin} />
-      <Button title="Đăng Ký" onPress={() => navigation.navigate('Register')} />
     </View>
+  );
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Đăng Nhập</Text>
+
+      {renderInput('person-outline', 'Tên đăng nhập', username, setUsername)}
+      {renderInput('lock-closed-outline', 'Mật khẩu', password, setPassword, true)}
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Đăng Nhập</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.link}>Chưa có tài khoản? Đăng ký ngay</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
+  container: {
+    padding: 24,
+    backgroundColor: '#F0F8FF',
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#005B9F',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#CCE6F6',
+    marginBottom: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 1, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#007ACC',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  link: {
+    color: '#007ACC',
+    fontSize: 15,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });
 
 export default LoginScreen;

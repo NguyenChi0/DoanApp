@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUser } from '../services/api';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Login: undefined;
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface User {
   id: number;
@@ -13,6 +21,8 @@ interface User {
 
 const AccountScreen: React.FC = () => {
   const { token, user, setUser, logout } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -30,13 +40,11 @@ const AccountScreen: React.FC = () => {
   const handleUpdate = async () => {
     if (!token || !user) return;
 
-    // Validate email format
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       Alert.alert('Lỗi', 'Email không hợp lệ');
       return;
     }
 
-    // Check if there are any changes
     const updateData: any = {};
     if (fullName) updateData.full_name = fullName;
     if (email) updateData.email = email;
@@ -50,8 +58,7 @@ const AccountScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      await updateUser(user.id, updateData, token);
-      // Update user context with new data
+      await updateUser(user.id, updateData);
       setUser({ ...user, full_name: fullName, email, address });
       Alert.alert('Thành công', 'Thông tin tài khoản đã được cập nhật');
     } catch (error: any) {
@@ -74,6 +81,7 @@ const AccountScreen: React.FC = () => {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>Vui lòng đăng nhập để chỉnh sửa thông tin</Text>
+        <Button title="Đăng Nhập" onPress={() => navigation.navigate('Login')} />
       </View>
     );
   }
@@ -108,7 +116,7 @@ const AccountScreen: React.FC = () => {
         secureTextEntry
       />
       <Button
-        title={loading ? "Đang cập nhật..." : "Cập nhật"}
+        title={loading ? 'Đang cập nhật...' : 'Cập nhật'}
         onPress={handleUpdate}
         disabled={loading}
       />
@@ -148,6 +156,7 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
     textAlign: 'center',
+    marginBottom: 20,
   },
   logoutContainer: {
     marginTop: 20,

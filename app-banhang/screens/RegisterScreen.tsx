@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-// Define the navigation param list
 type RootStackParamList = {
   Login: undefined;
   Register: undefined;
@@ -31,50 +38,105 @@ const RegisterScreen: React.FC = () => {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Đăng Ký</Text>
+  const renderInput = (
+    icon: string,
+    placeholder: string,
+    value: string,
+    setValue: (text: string) => void,
+    secure?: boolean
+  ) => (
+    <View style={styles.inputContainer}>
+      <Ionicons name={icon} size={22} color="#007ACC" style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Tên đăng nhập"
-        value={username}
-        onChangeText={setUsername}
+        placeholder={placeholder}
+        placeholderTextColor="#888"
+        value={value}
+        onChangeText={setValue}
+        secureTextEntry={secure}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Mật khẩu"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Họ và Tên"
-        value={fullName}
-        onChangeText={setFullName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Địa chỉ"
-        value={address}
-        onChangeText={setAddress}
-      />
-      <Button title="Đăng Ký" onPress={handleRegister} />
-      <Button title="Quay lại Đăng Nhập" onPress={() => navigation.navigate('Login')} />
     </View>
+  );
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Tạo Tài Khoản</Text>
+
+      {renderInput('person-outline', 'Tên đăng nhập', username, setUsername)}
+      {renderInput('lock-closed-outline', 'Mật khẩu', password, setPassword, true)}
+      {renderInput('mail-outline', 'Email', email, setEmail)}
+      {renderInput('person-circle-outline', 'Họ và Tên', fullName, setFullName)}
+      {renderInput('location-outline', 'Địa chỉ', address, setAddress)}
+
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Đăng Ký</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <Text style={styles.link}>Quay lại Đăng Nhập</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
+  container: {
+    padding: 24,
+    backgroundColor: '#F0F8FF',
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#005B9F',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#CCE6F6',
+    marginBottom: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 1, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  button: {
+    backgroundColor: '#007ACC',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+    elevation: 2,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  link: {
+    color: '#007ACC',
+    fontSize: 15,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
 });
 
 export default RegisterScreen;

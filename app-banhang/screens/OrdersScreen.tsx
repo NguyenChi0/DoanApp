@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     color: 'green',
   },
   errorText: {
-    color: 'red',
+    color: 'gray',
     textAlign: 'center',
     marginBottom: 20,
   },
