@@ -26,8 +26,10 @@ interface Order {
   id: number;
   user_name: string;
   address: string;
+  phone_number: string; // Add phone number field
   total_price: number | string | undefined;
   created_at: string;
+  status: number; // Add status field for completeness
 }
 
 interface OrderItem {

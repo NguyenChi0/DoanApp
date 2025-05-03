@@ -27,6 +27,7 @@ const CheckoutScreen: React.FC = () => {
   const { cartItems, removeFromCart, setCartItems } = useCart();
   const { token } = useAuth(); // Lấy token để kiểm tra trạng thái đăng nhập
   const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -44,14 +45,19 @@ const CheckoutScreen: React.FC = () => {
       return;
     }
 
-    // Nếu đã đăng nhập, tiếp tục kiểm tra địa chỉ
+    // Nếu đã đăng nhập, tiếp tục kiểm tra địa chỉ và số điện thoại
     if (!address) {
       alert('Vui lòng nhập địa chỉ giao hàng.');
       return;
     }
+    
+    if (!phoneNumber) {
+      alert('Vui lòng nhập số điện thoại.');
+      return;
+    }
 
     try {
-      await createOrder(address, cartItems);
+      await createOrder(address, phoneNumber, cartItems);
       alert('Đặt hàng thành công!');
       setCartItems([]);
       navigation.navigate('HomeScreen');
@@ -84,6 +90,13 @@ const CheckoutScreen: React.FC = () => {
           placeholder="Địa chỉ giao hàng"
           value={address}
           onChangeText={setAddress}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Số điện thoại"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+          keyboardType="phone-pad"
         />
         <Text style={styles.totals}>Tổng tiền: ${total}</Text>
         <Button title="Xác nhận Đơn hàng" onPress={handleCheckout} />

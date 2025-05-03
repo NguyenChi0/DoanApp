@@ -230,9 +230,11 @@ app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
+
 // API tạo đơn hàng (yêu cầu auth) - với trạng thái
 app.post('/orders', authenticate, (req, res) => {
-  const { address, cartItems } = req.body;
+  const { address, phoneNumber, cartItems } = req.body;
+  
   const userId = req.userId;
   if (!cartItems || cartItems.length === 0) return res.status(400).json({ error: 'Giỏ hàng trống' });
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -242,9 +244,12 @@ app.post('/orders', authenticate, (req, res) => {
     const shippingAddress = address || user.user_address;
     if (!shippingAddress) return res.status(400).json({ error: 'Shipping address is required' });
     
+    // Add validation for phone number
+    if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required' });
+    
     // Thêm trạng thái mặc định là 0 (Chờ xác nhận)
-    db.query('INSERT INTO orders (user_id, user_name, address, total_price, status) VALUES (?, ?, ?, ?, 0)',
-      [userId, user.full_name, shippingAddress, totalPrice],
+    db.query('INSERT INTO orders (user_id, user_name, address, phone_number, total_price, status) VALUES (?, ?, ?, ?, ?, 0)',
+      [userId, user.full_name, shippingAddress, phoneNumber, totalPrice],
       (err, result) => {
         if (err) return res.status(500).json({ error: 'Lỗi server khi tạo đơn hàng' });
         const orderId = result.insertId;

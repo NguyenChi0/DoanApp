@@ -77,33 +77,37 @@ const OrdersScreen: React.FC = () => {
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
-  // Hàm để hiển thị trạng thái đơn hàng dựa trên số
-  const getStatusText = (status: number): string => {
-    switch (status) {
-      case 0:
-        return 'Chờ xác nhận';
-      case 1:
-        return 'Đang vận chuyển';
-      case 2:
-        return 'Đã giao hàng';
-      default:
-        return 'Không xác định';
-    }
-  };
+// Hàm để hiển thị trạng thái đơn hàng dựa trên số
+const getStatusText = (status: number): string => {
+  switch (status) {
+    case 0:
+      return 'Chờ xác nhận';
+    case 1:
+      return 'Đang vận chuyển';
+    case 2:
+      return 'Đã giao hàng';
+    case 3:
+      return 'Đã hủy';
+    default:
+      return 'Không xác định';
+  }
+};
 
-  // Hàm để lấy màu sắc cho trạng thái
-  const getStatusColor = (status: number): string => {
-    switch (status) {
-      case 0:
-        return '#f39c12'; // Màu cam cho chờ xác nhận
-      case 1:
-        return '#3498db'; // Màu xanh dương cho đang vận chuyển
-      case 2:
-        return '#2ecc71'; // Màu xanh lá cho đã giao hàng
-      default:
-        return '#95a5a6'; // Màu xám cho không xác định
-    }
-  };
+// Hàm để lấy màu sắc cho trạng thái
+const getStatusColor = (status: number): string => {
+  switch (status) {
+    case 0:
+      return '#f39c12'; // Màu cam cho chờ xác nhận
+    case 1:
+      return '#3498db'; // Màu xanh dương cho đang vận chuyển
+    case 2:
+      return '#2ecc71'; // Màu xanh lá cho đã giao hàng
+    case 3:
+      return '#e74c3c'; // Màu đỏ cho đã hủy
+    default:
+      return '#95a5a6'; // Màu xám cho không xác định
+  }
+};
 
   const renderItem = ({ item }: { item: Order }) => (
     <TouchableOpacity

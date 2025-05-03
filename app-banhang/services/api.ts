@@ -66,8 +66,8 @@ export const fetchCategories = async () => {
 };
 
 // Use authAxios for authenticated endpoints
-export const createOrder = async (address: string, cartItems: CartItem[]) => {
-  const response = await authAxios.post(`/orders`, { address, cartItems });
+export const createOrder = async (address: string, phoneNumber: string, cartItems: CartItem[]) => {
+  const response = await authAxios.post(`/orders`, { address, phoneNumber, cartItems });
   return response.data;
 };
 
