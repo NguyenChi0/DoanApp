@@ -1,29 +1,79 @@
-// App.tsx
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import LoginScreen from './screens/LoginScreen';
 import ProductScreen from './screens/ProductScreen';
 import ProductEditScreen from './screens/ProductEditScreen';
 import AddProductScreen from './screens/AddProductScreen';
 import CategoriesManagement from './screens/CategoriesManagement';
+import OrderManagementScreen from './screens/OrderManagementScreen';
+import OrderDetailScreen from './screens/OrderDetailScreen';
 
 export type RootStackParamList = {
   Login: undefined;
-  Product: undefined;
+  MainTabs: undefined;
   ProductEdit: { product: any };
   AddProduct: undefined;
+  OrderDetail: { orderId: number };
+  OrderManagement: undefined;
+};
+
+export type TabParamList = {
+  Product: undefined;
   CategoriesManagement: undefined;
+  OrderManagement: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#2196F3',
+        tabBarInactiveTintColor: '#666',
+        tabBarStyle: { backgroundColor: '#fff' },
+      }}
+    >
+      <Tab.Screen 
+        name="Product" 
+        component={ProductScreen} 
+        options={{ 
+          title: 'Sản phẩm', 
+          tabBarIcon: ({ color, size }) => <Icon name="shopping-bag" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
+      <Tab.Screen 
+        name="CategoriesManagement" 
+        component={CategoriesManagement} 
+        options={{ 
+          title: 'Danh mục', 
+          tabBarIcon: ({ color, size }) => <Icon name="th-list" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
+      <Tab.Screen 
+        name="OrderManagement" 
+        component={OrderManagementScreen} 
+        options={{ 
+          title: 'Đơn hàng', 
+          tabBarIcon: ({ color, size }) => <Icon name="list-alt" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
+    </Tab.Navigator>
+  );
+}
 
 export default function App(): React.ReactElement {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        id={undefined}
         initialRouteName="Login"
         screenOptions={{
           headerStyle: {
@@ -45,12 +95,9 @@ export default function App(): React.ReactElement {
           }}
         />
         <Stack.Screen 
-          name="Product" 
-          component={ProductScreen} 
-          options={{
-            title: 'Quản lý sản phẩm',
-            headerLeft: () => null,
-          }}
+          name="MainTabs" 
+          component={MainTabs} 
+          options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="ProductEdit" 
@@ -67,10 +114,10 @@ export default function App(): React.ReactElement {
           }}
         />
         <Stack.Screen 
-          name="CategoriesManagement" 
-          component={CategoriesManagement} 
+          name="OrderDetail" 
+          component={OrderDetailScreen} 
           options={{
-            title: 'Quản lý danh mục',
+            title: 'Chi tiết đơn hàng',
           }}
         />
       </Stack.Navigator>

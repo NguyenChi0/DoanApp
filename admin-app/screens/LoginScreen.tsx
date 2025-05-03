@@ -33,8 +33,7 @@ const LoginScreen = ({ navigation }: Props) => {
       try {
         const token = await getToken();
         if (token) {
-          // If token exists, navigate to Product screen
-          navigation.replace('Product');
+          navigation.replace('MainTabs'); // Đổi từ 'Product' sang 'MainTabs'
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -42,22 +41,21 @@ const LoginScreen = ({ navigation }: Props) => {
         setIsCheckingAuth(false);
       }
     };
-
+  
     checkAuth();
   }, [navigation]);
-
+  
   const handleLogin = async () => {
-    // Form validation
     if (!username.trim() || !password.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập tài khoản và mật khẩu');
       return;
     }
-
+  
     setIsLoading(true);
     try {
       const result = await loginAdmin(username, password);
       if (result && result.token) {
-        navigation.replace('Product');
+        navigation.replace('MainTabs'); // Đổi từ 'Product' sang 'MainTabs'
       } else {
         Alert.alert('Đăng nhập thất bại', 'Sai tài khoản hoặc mật khẩu');
       }

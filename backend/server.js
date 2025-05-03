@@ -34,12 +34,12 @@ const authenticate = (req, res, next) => {
   jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Invalid token' });
     req.userId = decoded.userId;
-    req.userRole = decoded.role; // Include role in request
+    req.userRole = decoded.role;
     next();
   });
 };
 
-// Admin middleware - check if user is admin
+// Admin middleware
 const isAdmin = (req, res, next) => {
   if (req.userRole !== 1) {
     return res.status(403).json({ error: 'Admin permission required' });
@@ -211,7 +211,6 @@ app.post('/products', authenticate, isAdmin, (req, res) => {
 app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
   const productId = req.params.id;
   
-  // Kiểm tra xem sản phẩm có tồn tại không
   db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
     if (err) {
       return res.status(500).json({ error: 'Lỗi server' });
@@ -220,7 +219,6 @@ app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
     }
     
-    // Xóa sản phẩm nếu tồn tại
     db.query('DELETE FROM products WHERE id = ?', [productId], (err) => {
       if (err) {
         return res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
@@ -230,8 +228,7 @@ app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
-
-// API tạo đơn hàng (yêu cầu auth) - với trạng thái
+// API tạo đơn hàng (yêu cầu auth)
 app.post('/orders', authenticate, (req, res) => {
   const { address, phoneNumber, cartItems } = req.body;
   
@@ -244,10 +241,8 @@ app.post('/orders', authenticate, (req, res) => {
     const shippingAddress = address || user.user_address;
     if (!shippingAddress) return res.status(400).json({ error: 'Shipping address is required' });
     
-    // Add validation for phone number
     if (!phoneNumber) return res.status(400).json({ error: 'Phone number is required' });
     
-    // Thêm trạng thái mặc định là 0 (Chờ xác nhận)
     db.query('INSERT INTO orders (user_id, user_name, address, phone_number, total_price, status) VALUES (?, ?, ?, ?, ?, 0)',
       [userId, user.full_name, shippingAddress, phoneNumber, totalPrice],
       (err, result) => {
@@ -263,32 +258,51 @@ app.post('/orders', authenticate, (req, res) => {
   });
 });
 
-// Cập nhật API lấy tất cả đơn hàng của user (yêu cầu auth)
+// API lấy tất cả đơn hàng (admin thấy tất cả, user thấy của mình)
 app.get('/orders', authenticate, (req, res) => {
   const userId = req.userId;
-  const query = `
+  const isAdminUser = req.userRole === 1;
+  let query = `
     SELECT 
       o.id, 
       o.user_name, 
       o.address, 
+      o.phone_number,
       o.total_price, 
       o.created_at,
       o.status
     FROM orders o
-    WHERE o.user_id = ?
-    ORDER BY o.created_at DESC
   `;
-  db.query(query, [userId], (err, results) => {
+  const values = [];
+  
+  if (!isAdminUser) {
+    query += ' WHERE o.user_id = ?';
+    values.push(userId);
+  }
+  
+  query += ' ORDER BY o.created_at DESC';
+  
+  db.query(query, values, (err, results) => {
     if (err) return res.status(500).json({ error: 'Lỗi server khi lấy đơn hàng' });
     res.json(results);
   });
 });
 
-// Cập nhật API lấy chi tiết 1 đơn hàng (yêu cầu auth)
+// API lấy chi tiết 1 đơn hàng (admin thấy tất cả, user thấy của mình)
 app.get('/orders/:id', authenticate, (req, res) => {
   const orderId = req.params.id;
   const userId = req.userId;
-  db.query('SELECT * FROM orders WHERE id = ? AND user_id = ?', [orderId, userId], (err, orderResult) => {
+  const isAdminUser = req.userRole === 1;
+  
+  let query = 'SELECT * FROM orders WHERE id = ?';
+  const values = [orderId];
+  
+  if (!isAdminUser) {
+    query += ' AND user_id = ?';
+    values.push(userId);
+  }
+  
+  db.query(query, values, (err, orderResult) => {
     if (err) return res.status(500).json({ error: 'Lỗi server' });
     if (orderResult.length === 0) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
     const detailsQuery = `
@@ -307,7 +321,19 @@ app.get('/orders/:id', authenticate, (req, res) => {
   });
 });
 
+// API cập nhật trạng thái đơn hàng (chỉ admin)
+app.put('/orders/:id/status', authenticate, isAdmin, (req, res) => {
+  const orderId = req.params.id;
+  const { status } = req.body;
+  if (status === undefined) return res.status(400).json({ error: 'Trạng thái là bắt buộc' });
+  db.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái' });
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+    res.json({ message: 'Cập nhật trạng thái thành công' });
+  });
+});
 
+// API quản lý danh mục
 app.get('/categories', (req, res) => {
   db.query('SELECT * FROM categories', (err, results) => {
     if (err) {
@@ -350,7 +376,6 @@ app.delete('/categories/:id', authenticate, isAdmin, (req, res) => {
     });
   });
 });
-
 
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);

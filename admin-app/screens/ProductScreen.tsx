@@ -10,10 +10,16 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { RootStackParamList, TabParamList } from '../App';
 import { fetchProducts, deleteProduct, logout } from '../api';
 
-type ProductScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Product'>;
+// Fix navigation type by using CompositeNavigationProp
+type ProductScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Product'>,
+  StackNavigationProp<RootStackParamList>
+>;
 
 type Props = {
   navigation: ProductScreenNavigationProp;
@@ -99,7 +105,7 @@ const ProductScreen = ({ navigation }: Props) => {
           text: 'Đăng xuất',
           onPress: async () => {
             await logout();
-            navigation.replace('Login');
+            navigation.navigate('Login');
           },
         },
       ]
@@ -167,12 +173,13 @@ const ProductScreen = ({ navigation }: Props) => {
       >
         <Text style={styles.addProductButtonText}>Thêm sản phẩm mới</Text>
       </TouchableOpacity>
-
+      
+      {/* Nút Đăng xuất phía dưới */}
       <TouchableOpacity 
-        style={styles.manageCategoriesButton} 
-        onPress={() => navigation.navigate('CategoriesManagement')}
+        style={styles.logoutButtonUI} 
+        onPress={handleLogout}
       >
-        <Text style={styles.manageCategoriesButtonText}>Quản lý danh mục</Text>
+        <Text style={styles.logoutButtonText}>Đăng Xuất</Text>
       </TouchableOpacity>
     </View>
   );
@@ -287,6 +294,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   manageCategoriesButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  logoutButtonUI: {
+    backgroundColor: '#f44336',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  logoutButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',

@@ -13,6 +13,7 @@ import {
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import { addProduct, fetchCategories, getToken } from '../api';
+import { Picker } from '@react-native-picker/picker';
 
 type AddProductScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddProduct'>;
 
@@ -115,13 +116,16 @@ const AddProductScreen = ({ navigation }: Props) => {
         keyboardType="numeric"
       />
 
-      <TextInput
-        style={styles.input}
-        value={categoryId}
-        onChangeText={setCategoryId}
-        placeholder="ID danh mục (nếu có)"
-        keyboardType="numeric"
-      />
+<Picker
+  selectedValue={categoryId}
+  onValueChange={(itemValue) => setCategoryId(itemValue)}
+  style={styles.input}
+>
+  <Picker.Item label="Không chọn danh mục" value="" />
+  {categories.map((cat) => (
+    <Picker.Item key={cat.id} label={cat.name} value={cat.id.toString()} />
+  ))}
+</Picker>
 
       <Text style={styles.categoryListTitle}>Danh sách danh mục:</Text>
       {categories.map((cat) => (

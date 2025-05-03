@@ -1,4 +1,3 @@
-// api.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'http://192.168.1.7:3000';
@@ -210,6 +209,75 @@ export const deleteCategory = async (id: number) => {
     return data;
   } catch (error: any) {
     console.error('Delete category error:', error);
+    throw error;
+  }
+};
+
+export const fetchOrders = async () => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải danh sách đơn hàng');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch orders error:', error);
+    throw error;
+  }
+};
+
+export const fetchOrderDetails = async (orderId: number) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/orders/${orderId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải chi tiết đơn hàng');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch order details error:', error);
+    throw error;
+  }
+};
+
+export const updateOrderStatus = async (orderId: number, status: number) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể cập nhật trạng thái đơn hàng');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Update order status error:', error);
     throw error;
   }
 };

@@ -1,3 +1,4 @@
+// screens/ProductEditScreen.tsx
 import React from 'react';
 import {
   View,
@@ -10,14 +11,26 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
-import { addProduct, getToken } from '../api';
+import { getToken } from '../api';
 
-type ProductEditScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Product'>;
+type ProductEditScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProductEdit'>;
+type ProductEditScreenRouteProp = RouteProp<RootStackParamList, 'ProductEdit'>;
 
 type Props = {
   navigation: ProductEditScreenNavigationProp;
-  route: { params: { product: any } };
+  route: ProductEditScreenRouteProp;
+};
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  description?: string;
+  image?: string;
+  stock: number;
+  category_id?: number;
 };
 
 const ProductEditScreen = ({ navigation, route }: Props) => {
@@ -40,7 +53,7 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
       description,
       price: parseFloat(price),
       stock: parseInt(stock) || 0,
-      category_id: categoryId ? parseInt(categoryId) : null,
+      category_id: categoryId ? parseInt(categoryId) : undefined,
     };
 
     setIsLoading(true);
