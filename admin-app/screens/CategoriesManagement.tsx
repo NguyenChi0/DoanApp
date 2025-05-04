@@ -11,11 +11,11 @@ import {
   TextInput,
   Modal
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
 import { fetchCategories, addCategory, updateCategory, deleteCategory, getToken } from '../api';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { TabParamList } from '../App';
 
-type CategoriesManagementNavigationProp = StackNavigationProp<RootStackParamList, 'CategoriesManagement'>;
+type CategoriesManagementNavigationProp = BottomTabNavigationProp<TabParamList, 'CategoriesManagement'>;
 
 type Props = {
   navigation: CategoriesManagementNavigationProp;
