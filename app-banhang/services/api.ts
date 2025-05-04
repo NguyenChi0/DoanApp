@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.7:3000';
+const API_URL = 'http://192.168.52.114:3000';
 
 interface CartItem {
   id: string;
