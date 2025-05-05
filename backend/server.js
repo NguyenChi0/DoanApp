@@ -4,6 +4,7 @@ const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 const app = express();
 const port = 3000;
@@ -11,6 +12,7 @@ const port = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
 const db = mysql.createConnection({
   host: 'localhost',
   port: 3306,
@@ -171,7 +173,14 @@ app.get('/products', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else {
-      res.json(results);
+      const baseImageUrl = 'http://192.168.43.49:3000'; // Đảm bảo khớp với địa chỉ server
+      const productsWithImageUrl = results.map(product => ({
+        ...product,
+        image: product.image && !product.image.startsWith('http')
+          ? `${baseImageUrl}/${product.image}`
+          : product.image,
+      }));
+      res.json(productsWithImageUrl);
     }
   });
 });

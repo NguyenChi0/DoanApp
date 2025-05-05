@@ -59,7 +59,7 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
     setIsLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch(`http://192.168.52.114:3000/products/${product.id}`, {
+      const res = await fetch(`http://192.168.43.49:3000/products/${product.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
