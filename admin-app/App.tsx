@@ -11,6 +11,7 @@ import AddProductScreen from './screens/AddProductScreen';
 import CategoriesManagement from './screens/CategoriesManagement';
 import OrderManagementScreen from './screens/OrderManagementScreen';
 import OrderDetailScreen from './screens/OrderDetailScreen';
+import RevenueReportScreen from './screens/RevenueReportScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -19,12 +20,14 @@ export type RootStackParamList = {
   AddProduct: undefined;
   OrderDetail: { orderId: number };
   OrderManagement: undefined;
+  RevenueReport: undefined;
 };
 
 export type TabParamList = {
   Product: undefined;
   CategoriesManagement: undefined;
   OrderManagement: undefined;
+  RevenueReport: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -63,6 +66,15 @@ function MainTabs() {
         options={{ 
           title: 'Đơn hàng', 
           tabBarIcon: ({ color, size }) => <Icon name="list-alt" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
+      <Tab.Screen 
+        name="RevenueReport" 
+        component={RevenueReportScreen} 
+        options={{ 
+          title: 'Báo cáo', 
+          tabBarIcon: ({ color, size }) => <Icon name="bar-chart" color={color} size={size} />,
           headerShown: false,
         }} 
       />
@@ -118,6 +130,13 @@ export default function App(): React.ReactElement {
           component={OrderDetailScreen} 
           options={{
             title: 'Chi tiết đơn hàng',
+          }}
+        />
+        <Stack.Screen 
+          name="RevenueReport" 
+          component={RevenueReportScreen} 
+          options={{
+            title: 'Báo cáo Doanh thu',
           }}
         />
       </Stack.Navigator>

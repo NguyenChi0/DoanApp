@@ -14,6 +14,11 @@ export const clearToken = async () => {
   return await AsyncStorage.removeItem('token');
 };
 
+export const isAuthenticated = async () => {
+  const token = await getToken();
+  return !!token; // Simplified check; adjust based on your backend logic
+};
+
 export const loginAdmin = async (username: string, password: string) => {
   try {
     const res = await fetch(`${BASE_URL}/login`, {
@@ -67,27 +72,51 @@ export const addProduct = async (product: {
   name: string;
   price: number;
   description?: string;
-  category_id?: number;
+  category_id?: number | string; // Allow string for compatibility with Picker
   stock?: number;
   image?: string;
 }) => {
   try {
     const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+
+    const formData = new FormData();
+    formData.append('name', product.name);
+    if (product.description) formData.append('description', product.description);
+    formData.append('price', product.price.toString());
+    if (product.stock) formData.append('stock', product.stock.toString());
+    if (product.category_id) {
+      // Convert string to number if necessary
+      const categoryId = typeof product.category_id === 'string' ? parseInt(product.category_id) : product.category_id;
+      formData.append('category_id', categoryId.toString());
+    }
+    if (product.image) {
+      const filename = product.image.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`; // Default to jpeg if type is unclear
+      formData.append('image', {
+        uri: product.image,
+        name: filename,
+        type,
+      } as any);
+    }
+
     const res = await fetch(`${BASE_URL}/products`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(product),
+      body: formData,
     });
-    
+
     const data = await res.json();
-    
+
     if (!res.ok) {
       throw new Error(data.error || 'Không thể thêm sản phẩm');
     }
-    
+
     return data;
   } catch (error: any) {
     console.error('Add product error:', error);

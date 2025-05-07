@@ -1,4 +1,3 @@
-// screens/AddProductScreen.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,12 +7,15 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useIsFocused } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
-import { addProduct, fetchCategories, getToken } from '../api';
+import { addProduct, fetchCategories, isAuthenticated } from '../api'; // No need for getToken here
 import { Picker } from '@react-native-picker/picker';
+import * as ImagePicker from 'expo-image-picker';
 
 type AddProductScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddProduct'>;
 
@@ -33,23 +35,61 @@ const AddProductScreen = ({ navigation }: Props) => {
   const [stock, setStock] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
+      if (!(await isAuthenticated())) {
+        navigation.navigate('Login');
+        return;
+      }
       try {
-        const data = await fetchCategories();
-        setCategories(data);
-      } catch (error: any) {
+        const categoryData = await fetchCategories();
+        setCategories(categoryData);
+      } catch (error) {
         Alert.alert('Lỗi', 'Không thể tải danh mục');
+      } finally {
+        setInitialLoading(false);
       }
     };
-    loadCategories();
-  }, []);
+    if (isFocused) loadData();
+  }, [isFocused, navigation]);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Quyền truy cập', 'Cần quyền truy cập thư viện ảnh để chọn hình ảnh');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      Alert.alert('Thành công', 'Ảnh đã được chọn');
+    }
+  };
 
   const handleAdd = async () => {
     if (!name.trim() || !price.trim()) {
       Alert.alert('Lỗi', 'Tên và giá sản phẩm là bắt buộc');
+      return;
+    }
+
+    if (!(await isAuthenticated())) {
+      Alert.alert(
+        'Phiên đăng nhập hết hạn',
+        'Vui lòng đăng nhập lại để tiếp tục',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+      );
       return;
     }
 
@@ -58,7 +98,8 @@ const AddProductScreen = ({ navigation }: Props) => {
       description,
       price: parseFloat(price),
       stock: parseInt(stock) || 0,
-      category_id: categoryId ? parseInt(categoryId) : null,
+      category_id: categoryId ? categoryId : undefined,
+      image: image || undefined,
     };
 
     setIsLoading(true);
@@ -67,15 +108,23 @@ const AddProductScreen = ({ navigation }: Props) => {
       Alert.alert('Thành công', 'Thêm sản phẩm thành công');
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể thêm sản phẩm');
+      if (error.message.includes('token') || error.message.includes('đăng nhập')) {
+        Alert.alert(
+          'Phiên đăng nhập hết hạn',
+          'Vui lòng đăng nhập lại để tiếp tục',
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        );
+      } else {
+        Alert.alert('Lỗi', error.message || 'Không thể thêm sản phẩm');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (initialLoading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
@@ -85,13 +134,20 @@ const AddProductScreen = ({ navigation }: Props) => {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Thêm sản phẩm mới</Text>
 
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        <Text style={styles.imagePickerText}>
+          {image ? 'Thay đổi ảnh' : 'Chọn ảnh sản phẩm'}
+        </Text>
+      </TouchableOpacity>
+
+      {image && <Image source={{ uri: image }} style={styles.previewImage} />}
+
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
         placeholder="Tên sản phẩm"
       />
-
       <TextInput
         style={styles.input}
         value={description}
@@ -99,7 +155,6 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Mô tả"
         multiline
       />
-
       <TextInput
         style={styles.input}
         value={price}
@@ -107,7 +162,6 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Giá"
         keyboardType="numeric"
       />
-
       <TextInput
         style={styles.input}
         value={stock}
@@ -115,80 +169,59 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Số lượng tồn kho"
         keyboardType="numeric"
       />
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={categoryId}
+          onValueChange={(itemValue) => setCategoryId(itemValue)}
+          style={styles.picker}
+        >
+          <Picker.Item label="Chọn danh mục" value="" />
+          {categories.map((cat) => (
+            <Picker.Item key={cat.id} label={cat.name} value={cat.id.toString()} />
+          ))}
+        </Picker>
+      </View>
 
-<Picker
-  selectedValue={categoryId}
-  onValueChange={(itemValue) => setCategoryId(itemValue)}
-  style={styles.input}
->
-  <Picker.Item label="Không chọn danh mục" value="" />
-  {categories.map((cat) => (
-    <Picker.Item key={cat.id} label={cat.name} value={cat.id.toString()} />
-  ))}
-</Picker>
-
-      <Text style={styles.categoryListTitle}>Danh sách danh mục:</Text>
-      {categories.map((cat) => (
-        <Text key={cat.id} style={styles.categoryItem}>
-          ID: {cat.id} - {cat.name}
-        </Text>
-      ))}
-
-      <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-        <Text style={styles.addButtonText}>Thêm sản phẩm</Text>
+      <TouchableOpacity style={styles.addButton} onPress={handleAdd} disabled={isLoading}>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.addButtonText}>Thêm sản phẩm</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
+  container: { flex: 1, padding: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   input: {
-    height: 50,
-    borderColor: '#ddd',
     borderWidth: 1,
-    marginBottom: 16,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    padding: 8,
+    marginBottom: 12,
+    borderRadius: 4,
   },
-  categoryListTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  categoryItem: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
+  pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
+  picker: { height: 50 },
   addButton: {
-    backgroundColor: '#4CAF50',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 4,
     alignItems: 'center',
-    marginTop: 20,
   },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  addButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  imagePicker: {
+    backgroundColor: '#ddd',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
   },
+  imagePickerText: { color: '#333', fontSize: 16 },
+  previewImage: { width: 200, height: 200, alignSelf: 'center', marginBottom: 10 },
 });
 
 export default AddProductScreen;

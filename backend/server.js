@@ -5,13 +5,25 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const port = 3000;
 
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'images')); // Save uploaded images to the 'images' folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Unique filename
+  }
+});
+
+const upload = multer({ storage: storage });
+
 app.use(cors());
 app.use(bodyParser.json());
-
 app.use('/images', express.static(path.join(__dirname, 'images')));
 const db = mysql.createConnection({
   host: 'localhost',
@@ -173,12 +185,14 @@ app.get('/products', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else {
-      const baseImageUrl = 'http://192.168.43.49:3000'; // Đảm bảo khớp với địa chỉ server
+      const baseImageUrl = 'http://192.168.43.49:3000';
       const productsWithImageUrl = results.map(product => ({
         ...product,
-        image: product.image && !product.image.startsWith('http')
-          ? `${baseImageUrl}/${product.image}`
-          : product.image,
+        image: product.image
+          ? (product.image.startsWith('http')
+              ? product.image
+              : `${baseImageUrl}/images/${product.image}`)
+          : null,
       }));
       res.json(productsWithImageUrl);
     }
@@ -194,25 +208,49 @@ app.get('/products/:id', (req, res) => {
     } else if (result.length === 0) {
       res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     } else {
-      res.json(result[0]);
+      const baseImageUrl = 'http://192.168.43.49:3000';
+      const product = {
+        ...result[0],
+        image: result[0].image
+          ? (result[0].image.startsWith('http')
+              ? result[0].image
+              : `${baseImageUrl}/images/${result[0].image}`)
+          : null,
+      };
+      res.json(product);
     }
   });
 });
 
 // API thêm sản phẩm (chỉ admin)
-app.post('/products', authenticate, isAdmin, (req, res) => {
-  const { name, description, price, image, stock, category_id } = req.body;
-  
+app.post('/products', authenticate, isAdmin, upload.single('image'), (req, res) => {
+  const { name, description, price, stock, category_id } = req.body;
+  const image = req.file ? req.file.filename : null;
+
   if (!name || !price) {
     return res.status(400).json({ error: 'Tên và giá sản phẩm là bắt buộc' });
   }
-  
+
   const query = 'INSERT INTO products (name, description, price, image, stock, category_id) VALUES (?, ?, ?, ?, ?, ?)';
   db.query(query, [name, description, price, image, stock || 0, category_id], (err, result) => {
     if (err) {
       return res.status(500).json({ error: 'Lỗi server khi thêm sản phẩm' });
     }
-    res.status(201).json({ id: result.insertId, message: 'Thêm sản phẩm thành công' });
+    const baseImageUrl = 'http://192.168.43.49:3000';
+    const imageUrl = image ? `${baseImageUrl}/images/${image}` : null;
+    res.status(201).json({
+      id: result.insertId,
+      message: 'Thêm sản phẩm thành công',
+      product: {
+        id: result.insertId,
+        name,
+        description,
+        price: parseFloat(price),
+        image: imageUrl,
+        stock: parseInt(stock) || 0,
+        category_id: category_id ? parseInt(category_id) : null,
+      },
+    });
   });
 });
 
@@ -325,7 +363,16 @@ app.get('/orders/:id', authenticate, (req, res) => {
     `;
     db.query(detailsQuery, [orderId], (err, itemsResult) => {
       if (err) return res.status(500).json({ error: 'Lỗi server khi lấy chi tiết đơn hàng' });
-      res.json({ order: orderResult[0], items: itemsResult });
+      const baseImageUrl = 'http://192.168.43.49:3000';
+      const itemsWithImageUrl = itemsResult.map(item => ({
+        ...item,
+        product_image: item.product_image
+          ? (item.product_image.startsWith('http')
+              ? item.product_image
+              : `${baseImageUrl}/images/${item.product_image}`)
+          : null,
+      }));
+      res.json({ order: orderResult[0], items: itemsWithImageUrl });
     });
   });
 });
