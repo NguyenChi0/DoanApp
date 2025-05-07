@@ -12,11 +12,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchOrders } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons'; // Thêm import Ionicons
 
 type RootStackParamList = {
   OrdersScreen: undefined;
   OrderDetailScreen: { orderId: string };
-  Login: undefined; // Thêm Login vào RootStackParamList
+  Login: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -27,7 +28,7 @@ interface Order {
   address: string;
   total_price: number | string | undefined;
   created_at: string;
-  status: number; // Thêm trạng thái
+  status: number;
 }
 
 const OrdersScreen: React.FC = () => {
@@ -77,37 +78,35 @@ const OrdersScreen: React.FC = () => {
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
-// Hàm để hiển thị trạng thái đơn hàng dựa trên số
-const getStatusText = (status: number): string => {
-  switch (status) {
-    case 0:
-      return 'Chờ xác nhận';
-    case 1:
-      return 'Đang vận chuyển';
-    case 2:
-      return 'Đã giao hàng';
-    case 3:
-      return 'Đã hủy';
-    default:
-      return 'Không xác định';
-  }
-};
+  const getStatusText = (status: number): string => {
+    switch (status) {
+      case 0:
+        return 'Chờ xác nhận';
+      case 1:
+        return 'Đang vận chuyển';
+      case 2:
+        return 'Đã giao hàng';
+      case 3:
+        return 'Đã hủy';
+      default:
+        return 'Không xác định';
+    }
+  };
 
-// Hàm để lấy màu sắc cho trạng thái
-const getStatusColor = (status: number): string => {
-  switch (status) {
-    case 0:
-      return '#f39c12'; // Màu cam cho chờ xác nhận
-    case 1:
-      return '#3498db'; // Màu xanh dương cho đang vận chuyển
-    case 2:
-      return '#2ecc71'; // Màu xanh lá cho đã giao hàng
-    case 3:
-      return '#e74c3c'; // Màu đỏ cho đã hủy
-    default:
-      return '#95a5a6'; // Màu xám cho không xác định
-  }
-};
+  const getStatusColor = (status: number): string => {
+    switch (status) {
+      case 0:
+        return '#f39c12';
+      case 1:
+        return '#3498db';
+      case 2:
+        return '#2ecc71';
+      case 3:
+        return '#e74c3c';
+      default:
+        return '#95a5a6';
+    }
+  };
 
   const renderItem = ({ item }: { item: Order }) => (
     <TouchableOpacity
@@ -125,7 +124,6 @@ const getStatusColor = (status: number): string => {
           Địa chỉ: {item.address}
         </Text>
         
-        {/* Thêm hiển thị trạng thái đơn hàng */}
         <View style={[styles.statusContainer, { backgroundColor: getStatusColor(item.status) }]}>
           <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
@@ -139,9 +137,15 @@ const getStatusColor = (status: number): string => {
 
   if (!token) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>Bạn cần đăng nhập để xem đơn hàng</Text>
-        <Button title="Đăng Nhập" onPress={() => navigation.navigate('Login')} />
+      <View style={styles.centeredContainer}>
+        <Ionicons name="cart-outline" size={80} color="#6A7BF7" />
+        <Text style={styles.errorText}>Vui lòng đăng nhập để xem đơn hàng</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.loginButtonText}>Đăng Nhập</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -197,6 +201,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f9f9f9',
+  },
   orderItem: {
     backgroundColor: 'white',
     borderRadius: 8,
@@ -233,9 +244,8 @@ const styles = StyleSheet.create({
   orderAddress: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 8, // Thêm khoảng cách trước hiển thị trạng thái
+    marginBottom: 8,
   },
-  // Thêm style cho phần hiển thị trạng thái
   statusContainer: {
     alignSelf: 'flex-start',
     borderRadius: 12,
@@ -261,9 +271,10 @@ const styles = StyleSheet.create({
     color: 'green',
   },
   errorText: {
-    color: 'gray',
+    color: '#666',
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    marginVertical: 20,
   },
   retryButton: {
     backgroundColor: '#4B0082',
@@ -279,7 +290,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 20,
-  }
+  },
+  loginButton: {
+    backgroundColor: '#6A7BF7',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default OrdersScreen;
