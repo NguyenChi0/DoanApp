@@ -185,7 +185,7 @@ app.get('/products', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else {
-      const baseImageUrl = 'http://192.168.43.49:3000';
+      const baseImageUrl = 'http://192.168.52.114:3000';
       const productsWithImageUrl = results.map(product => ({
         ...product,
         image: product.image
@@ -208,7 +208,7 @@ app.get('/products/:id', (req, res) => {
     } else if (result.length === 0) {
       res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     } else {
-      const baseImageUrl = 'http://192.168.43.49:3000';
+      const baseImageUrl = 'http://192.168.52.114:3000';
       const product = {
         ...result[0],
         image: result[0].image
@@ -236,7 +236,7 @@ app.post('/products', authenticate, isAdmin, upload.single('image'), (req, res) 
     if (err) {
       return res.status(500).json({ error: 'Lỗi server khi thêm sản phẩm' });
     }
-    const baseImageUrl = 'http://192.168.43.49:3000';
+    const baseImageUrl = 'http://192.168.52.114:3000';
     const imageUrl = image ? `${baseImageUrl}/images/${image}` : null;
     res.status(201).json({
       id: result.insertId,
@@ -250,6 +250,74 @@ app.post('/products', authenticate, isAdmin, upload.single('image'), (req, res) 
         stock: parseInt(stock) || 0,
         category_id: category_id ? parseInt(category_id) : null,
       },
+    });
+  });
+});
+
+// API cập nhật sản phẩm (chỉ admin)
+app.put('/products/:id', authenticate, isAdmin, upload.single('image'), (req, res) => {
+  const productId = req.params.id;
+  const { name, description, price, stock, category_id } = req.body;
+  const image = req.file ? req.file.filename : null;
+
+  if (!name || !price) {
+    return res.status(400).json({ error: 'Tên và giá sản phẩm là bắt buộc' });
+  }
+
+  // Kiểm tra sản phẩm tồn tại
+  db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server' });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+    }
+
+    const oldProduct = result[0];
+    
+    // Xây dựng câu lệnh UPDATE
+    let query = 'UPDATE products SET name = ?, description = ?, price = ?, stock = ?';
+    const values = [name, description || null, price, stock || 0];
+    
+    if (category_id) {
+      query += ', category_id = ?';
+      values.push(category_id);
+    }
+    
+    if (image) {
+      query += ', image = ?';
+      values.push(image);
+    }
+    
+    query += ' WHERE id = ?';
+    values.push(productId);
+    
+    db.query(query, values, (err, updateResult) => {
+      if (err) {
+        return res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm' });
+      }
+      
+      const baseImageUrl = 'http://192.168.52.114:3000';
+      const updatedImage = image 
+        ? `${baseImageUrl}/images/${image}` 
+        : oldProduct.image 
+          ? (oldProduct.image.startsWith('http') 
+              ? oldProduct.image 
+              : `${baseImageUrl}/images/${oldProduct.image}`)
+          : null;
+      
+      res.json({
+        message: 'Cập nhật sản phẩm thành công',
+        product: {
+          id: parseInt(productId),
+          name,
+          description: description || null,
+          price: parseFloat(price),
+          stock: parseInt(stock) || 0,
+          category_id: category_id ? parseInt(category_id) : oldProduct.category_id,
+          image: updatedImage
+        }
+      });
     });
   });
 });
@@ -363,7 +431,7 @@ app.get('/orders/:id', authenticate, (req, res) => {
     `;
     db.query(detailsQuery, [orderId], (err, itemsResult) => {
       if (err) return res.status(500).json({ error: 'Lỗi server khi lấy chi tiết đơn hàng' });
-      const baseImageUrl = 'http://192.168.43.49:3000';
+      const baseImageUrl = 'http://192.168.52.114:3000';
       const itemsWithImageUrl = itemsResult.map(item => ({
         ...item,
         product_image: item.product_image

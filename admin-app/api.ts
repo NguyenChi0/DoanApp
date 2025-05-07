@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.43.49:3000';
+const BASE_URL = 'http://192.168.52.114:3000';
 
 export const getToken = async () => {
   return await AsyncStorage.getItem('token');
@@ -120,6 +120,69 @@ export const addProduct = async (product: {
     return data;
   } catch (error: any) {
     console.error('Add product error:', error);
+    throw error;
+  }
+};
+
+export const updateProduct = async (
+  id: number,
+  product: {
+    name: string;
+    price: number;
+    description?: string;
+    category_id?: number | string;
+    stock?: number;
+    image?: string;
+  },
+  newImageSelected: boolean = false
+) => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+
+    const formData = new FormData();
+    formData.append('name', product.name);
+    if (product.description) formData.append('description', product.description);
+    formData.append('price', product.price.toString());
+    if (product.stock !== undefined) formData.append('stock', product.stock.toString());
+    if (product.category_id) {
+      // Convert string to number if necessary
+      const categoryId = typeof product.category_id === 'string' ? parseInt(product.category_id) : product.category_id;
+      formData.append('category_id', categoryId.toString());
+    }
+    
+    // Only append image if new image was selected
+    if (newImageSelected && product.image) {
+      const filename = product.image.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`; // Default to jpeg if type is unclear
+      
+      formData.append('image', {
+        uri: product.image,
+        name: filename,
+        type,
+      } as any);
+    }
+
+    const res = await fetch(`${BASE_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể cập nhật sản phẩm');
+    }
+
+    return data;
+  } catch (error: any) {
+    console.error('Update product error:', error);
     throw error;
   }
 };

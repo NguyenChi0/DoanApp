@@ -1,19 +1,11 @@
-// screens/ProductEditScreen.tsx
-import React from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
-import { getToken } from '../api';
+import { getToken, updateProduct, fetchCategories } from '../api';
+import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 
 type ProductEditScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProductEdit'>;
 type ProductEditScreenRouteProp = RouteProp<RootStackParamList, 'ProductEdit'>;
@@ -35,12 +27,43 @@ type Product = {
 
 const ProductEditScreen = ({ navigation, route }: Props) => {
   const { product } = route.params;
-  const [name, setName] = React.useState(product.name);
-  const [description, setDescription] = React.useState(product.description || '');
-  const [price, setPrice] = React.useState(product.price.toString());
-  const [stock, setStock] = React.useState(product.stock.toString());
-  const [categoryId, setCategoryId] = React.useState(product.category_id?.toString() || '');
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [name, setName] = useState(product.name);
+  const [description, setDescription] = useState(product.description || '');
+  const [price, setPrice] = useState(product.price.toString());
+  const [stock, setStock] = useState(product.stock.toString());
+  const [categoryId, setCategoryId] = useState(product.category_id?.toString() || '');
+  const [categories, setCategories] = useState([]);
+  const [image, setImage] = useState<string | null>(product.image || null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoryData = await fetchCategories();
+        setCategories(categoryData);
+      } catch (error) {
+        Alert.alert('Lỗi', 'Không thể tải danh mục');
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Cần quyền truy cập ảnh');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) setImage(result.assets[0].uri);
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !price.trim()) {
@@ -48,91 +71,44 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
       return;
     }
 
-    const updatedProduct = {
-      name,
-      description,
-      price: parseFloat(price),
-      stock: parseInt(stock) || 0,
-      category_id: categoryId ? parseInt(categoryId) : undefined,
-    };
-
     setIsLoading(true);
     try {
-      const token = await getToken();
-      const res = await fetch(`http://192.168.43.49:3000/products/${product.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedProduct),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Không thể cập nhật sản phẩm');
-      }
-
+      await updateProduct(product.id, { name, description, price: parseFloat(price), stock: parseInt(stock), category_id: categoryId ? parseInt(categoryId) : undefined, image });
       Alert.alert('Thành công', 'Cập nhật sản phẩm thành công');
       navigation.goBack();
-    } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể cập nhật sản phẩm');
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể cập nhật sản phẩm');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Chỉnh sửa sản phẩm</Text>
 
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Tên sản phẩm"
-      />
+      {image && <Image source={{ uri: image }} style={styles.previewImage} />}
 
-      <TextInput
-        style={styles.input}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Mô tả"
-        multiline
-      />
+      <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+        <Text style={styles.imagePickerText}>Chọn ảnh mới cho sản phẩm</Text>
+      </TouchableOpacity>
 
-      <TextInput
-        style={styles.input}
-        value={price}
-        onChangeText={setPrice}
-        placeholder="Giá"
-        keyboardType="numeric"
-      />
+      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Tên sản phẩm" />
 
-      <TextInput
-        style={styles.input}
-        value={stock}
-        onChangeText={setStock}
-        placeholder="Số lượng tồn kho"
-        keyboardType="numeric"
-      />
+      <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Mô tả" multiline />
 
-      <TextInput
-        style={styles.input}
-        value={categoryId}
-        onChangeText={setCategoryId}
-        placeholder="ID danh mục (nếu có)"
-        keyboardType="numeric"
-      />
+      <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="Giá" keyboardType="numeric" />
+
+      <TextInput style={styles.input} value={stock} onChangeText={setStock} placeholder="Số lượng tồn kho" keyboardType="numeric" />
+
+      <View style={styles.pickerContainer}>
+        <Picker selectedValue={categoryId} onValueChange={(itemValue) => setCategoryId(itemValue)} style={styles.input}>
+          <Picker.Item label="Chọn danh mục" value="" />
+          {categories.map((cat: any) => (
+            <Picker.Item key={cat.id} label={cat.name} value={cat.id.toString()} />
+          ))}
+        </Picker>
+      </View>
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
@@ -142,43 +118,15 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
-  input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    marginBottom: 16,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-  },
-  saveButton: {
-    backgroundColor: '#4CAF50',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 12, borderRadius: 4 },
+  pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
+  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center' },
+  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  imagePicker: { backgroundColor: '#ddd', padding: 10, borderRadius: 5, alignItems: 'center', marginBottom: 10 },
+  imagePickerText: { color: '#333', fontSize: 16 },
+  previewImage: { width: 200, height: 200, alignSelf: 'center', marginBottom: 10 }
 });
 
 export default ProductEditScreen;
