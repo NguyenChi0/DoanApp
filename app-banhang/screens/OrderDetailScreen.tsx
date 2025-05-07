@@ -6,11 +6,13 @@ import {
   StyleSheet, 
   ActivityIndicator, 
   Image,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { fetchOrderById } from '../services/api';
+import { fetchOrderDetails, cancelOrder, getOrderStatusText } from '../services/api';
 
 // Define the navigation param list
 type RootStackParamList = {
@@ -26,10 +28,10 @@ interface Order {
   id: number;
   user_name: string;
   address: string;
-  phone_number: string; // Add phone number field
+  phone_number: string;
   total_price: number | string | undefined;
   created_at: string;
-  status: number; // Add status field for completeness
+  status: number;
 }
 
 interface OrderItem {
@@ -50,13 +52,14 @@ const OrderDetailScreen: React.FC = () => {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
     const loadOrderDetails = async () => {
       try {
         setLoading(true);
-        const data = await fetchOrderById(Number(orderId));
-        console.log('Order details:', data); // Debug the data
+        const data = await fetchOrderDetails(Number(orderId));
+        console.log('Order details:', data);
         setOrder(data.order);
         setItems(data.items);
         setError(null);
@@ -69,6 +72,25 @@ const OrderDetailScreen: React.FC = () => {
     };
     loadOrderDetails();
   }, [orderId]);
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+
+    setCancelLoading(true);
+    try {
+      const response = await cancelOrder(order.id);
+      Alert.alert('Thành công', response.message);
+      // Refresh order details after cancellation
+      const updatedData = await fetchOrderDetails(Number(orderId));
+      setOrder(updatedData.order);
+      setItems(updatedData.items);
+    } catch (err: any) {
+      console.error('Error cancelling order:', err);
+      Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -133,8 +155,24 @@ const OrderDetailScreen: React.FC = () => {
       <View style={styles.orderDetails}>
         <Text style={styles.userName}>Khách hàng: {order.user_name}</Text>
         <Text style={styles.orderAddress}>Địa chỉ: {order.address}</Text>
+        <Text style={styles.orderPhone}>Số điện thoại: {order.phone_number}</Text>
+        <Text style={styles.orderStatus}>Trạng thái: {getOrderStatusText(order.status)}</Text>
         <Text style={styles.orderTotal}>Tổng tiền: ${formatPrice(order.total_price)}</Text>
       </View>
+
+      {order.status === 0 && (
+        <TouchableOpacity 
+          style={[styles.cancelButton, cancelLoading && styles.disabledButton]} 
+          onPress={handleCancelOrder}
+          disabled={cancelLoading}
+        >
+          {cancelLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
       <Text style={styles.itemsHeader}>Sản phẩm trong đơn hàng:</Text>
       <FlatList
@@ -201,10 +239,36 @@ const styles = StyleSheet.create({
     color: '#555',
     marginBottom: 8,
   },
+  orderPhone: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 8,
+  },
+  orderStatus: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 8,
+  },
   orderTotal: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'green',
+  },
+  cancelButton: {
+    backgroundColor: '#e74c3c',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#c0392b',
+    opacity: 0.7,
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   itemsHeader: {
     fontSize: 18,

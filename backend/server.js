@@ -487,6 +487,33 @@ app.put('/orders/:id/status', authenticate, isAdmin, (req, res) => {
   });
 });
 
+// API for users to cancel their own orders (only if status is pending/0)
+app.put('/orders/:id/cancel', authenticate, (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.userId;
+  
+  // First check if the order belongs to the user and is in a cancellable state
+  db.query('SELECT * FROM orders WHERE id = ? AND user_id = ?', [orderId, userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi kiểm tra đơn hàng' });
+    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+    
+    const order = results[0];
+    // Can only cancel if the order is still pending (status 0)
+    if (order.status !== 0) {
+      return res.status(400).json({ 
+        error: 'Không thể huỷ đơn hàng',
+        message: 'Đơn hàng đã được xử lý và không thể huỷ'
+      });
+    }
+    
+    // Update order status to cancelled (3)
+    db.query('UPDATE orders SET status = 3 WHERE id = ?', [orderId], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi server khi huỷ đơn hàng' });
+      res.json({ message: 'Đơn hàng đã được huỷ thành công' });
+    });
+  });
+});
+
 // API quản lý danh mục
 app.get('/categories', (req, res) => {
   db.query('SELECT * FROM categories', (err, results) => {

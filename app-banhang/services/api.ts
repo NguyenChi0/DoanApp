@@ -77,7 +77,7 @@ export const fetchOrders = async () => {
   return response.data;
 };
 
-export const fetchOrderById = async (id: number) => {
+export const fetchOrderDetails = async (id: number) => {
   const response = await authAxios.get(`/orders/${id}`);
   return response.data;
 };
@@ -97,3 +97,41 @@ export const updateUser = async (id: number, userData: Partial<UserData>) => {
   return response.data;
 };
 
+// New function for customer order cancellation
+export const cancelOrder = async (orderId: number) => {
+  const response = await authAxios.put(`/orders/${orderId}/cancel`);
+  return response.data;
+};
+
+// Function to update order status (admin only)
+export const updateOrderStatus = async (orderId: number, status: number) => {
+  const response = await authAxios.put(`/orders/${orderId}/status`, { status });
+  return response.data;
+};
+
+// Helper function to get text representation of order status
+export const getOrderStatusText = (status: number): string => {
+  switch (status) {
+    case 0:
+      return 'Chờ xác nhận';
+    case 1:
+      return 'Đang vận chuyển';
+    case 2:
+      return 'Đã giao hàng';
+    case 3:
+      return 'Đã huỷ';
+    default:
+      return 'Không xác định';
+  }
+};
+
+// Helper function to get order status filter options
+export const getOrderStatusOptions = () => {
+  return [
+    { label: 'Tất cả đơn hàng', value: -1 },
+    { label: 'Chờ xác nhận', value: 0 },
+    { label: 'Đang vận chuyển', value: 1 },
+    { label: 'Đã giao hàng', value: 2 },
+    { label: 'Đã huỷ', value: 3 },
+  ];
+};

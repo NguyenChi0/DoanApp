@@ -6,13 +6,14 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   ActivityIndicator,
-  Button
+  Button,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { fetchOrders } from '../services/api';
+import { fetchOrders, cancelOrder, getOrderStatusText } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons'; // Thêm import Ionicons
+import { Ionicons } from '@expo/vector-icons';
 
 type RootStackParamList = {
   OrdersScreen: undefined;
@@ -37,6 +38,7 @@ const OrdersScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelLoadingOrderId, setCancelLoadingOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -61,6 +63,22 @@ const OrdersScreen: React.FC = () => {
     }
   };
 
+  const handleCancelOrder = async (orderId: number) => {
+    setCancelLoadingOrderId(orderId);
+    try {
+      const response = await cancelOrder(orderId);
+      Alert.alert('Thành công', response.message);
+      // Refresh orders after cancellation
+      const updatedData = await fetchOrders();
+      setOrders(updatedData);
+    } catch (err: any) {
+      console.error('Error cancelling order:', err);
+      Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+    } finally {
+      setCancelLoadingOrderId(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
       year: 'numeric', 
@@ -76,21 +94,6 @@ const OrdersScreen: React.FC = () => {
     if (price === undefined || price === null) return '0.00';
     const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
-  };
-
-  const getStatusText = (status: number): string => {
-    switch (status) {
-      case 0:
-        return 'Chờ xác nhận';
-      case 1:
-        return 'Đang vận chuyển';
-      case 2:
-        return 'Đã giao hàng';
-      case 3:
-        return 'Đã hủy';
-      default:
-        return 'Không xác định';
-    }
   };
 
   const getStatusColor = (status: number): string => {
@@ -125,12 +128,25 @@ const OrdersScreen: React.FC = () => {
         </Text>
         
         <View style={[styles.statusContainer, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+          <Text style={styles.statusText}>{getOrderStatusText(item.status)}</Text>
         </View>
       </View>
       
       <View style={styles.orderFooter}>
         <Text style={styles.orderTotal}>Tổng tiền: ${formatPrice(item.total_price)}</Text>
+        {item.status === 0 && (
+          <TouchableOpacity
+            style={[styles.cancelButton, cancelLoadingOrderId === item.id && styles.disabledButton]}
+            onPress={() => handleCancelOrder(item.id)}
+            disabled={cancelLoadingOrderId === item.id}
+          >
+            {cancelLoadingOrderId === item.id ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -264,11 +280,29 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     paddingTop: 10,
     alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   orderTotal: {
     fontSize: 16,
     fontWeight: 'bold',
     color: 'green',
+  },
+  cancelButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#c0392b',
+    opacity: 0.7,
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
   },
   errorText: {
     color: '#666',
