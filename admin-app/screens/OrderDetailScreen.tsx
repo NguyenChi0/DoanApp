@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
-import { fetchOrderDetails, updateOrderStatus } from '../api';
+import { fetchOrderDetails, updateOrderStatus, getOrderStatusText } from '../api';
 
 type OrderDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetail'>;
 
@@ -28,17 +28,22 @@ type OrderDetail = {
   }>;
 };
 
-const OrderDetailScreen = ({ route }: Props) => {
+const OrderDetailScreen = ({ navigation, route }: Props) => {
   const { orderId } = route.params;
   const [orderDetail, setOrderDetail] = useState<OrderDetail | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const loadOrderDetail = async () => {
       try {
+        setIsLoading(true);
         const data = await fetchOrderDetails(orderId);
         setOrderDetail(data);
       } catch (error) {
         console.error('Error fetching order details:', error);
+        Alert.alert('Lỗi', 'Không thể tải thông tin đơn hàng');
+      } finally {
+        setIsLoading(false);
       }
     };
     loadOrderDetail();
@@ -46,48 +51,134 @@ const OrderDetailScreen = ({ route }: Props) => {
 
   const handleUpdateStatus = async (newStatus: number) => {
     try {
+      setIsLoading(true);
       await updateOrderStatus(orderId, newStatus);
       setOrderDetail((prev) => prev ? { ...prev, order: { ...prev.order, status: newStatus } } : null);
-    } catch (error) {
+      Alert.alert('Thành công', 'Đã cập nhật trạng thái đơn hàng');
+    } catch (error: any) {
       console.error('Error updating order status:', error);
+      Alert.alert('Lỗi', error.message || 'Không thể cập nhật trạng thái đơn hàng');
+    } finally {
+      setIsLoading(false);
     }
   };
+  
+  const confirmCancelOrder = () => {
+    Alert.alert(
+      'Xác nhận huỷ đơn',
+      'Bạn có chắc chắn muốn huỷ đơn hàng này?',
+      [
+        { text: 'Không', style: 'cancel' },
+        { text: 'Huỷ đơn', style: 'destructive', onPress: () => handleUpdateStatus(3) }
+      ]
+    );
+  };
 
-  if (!orderDetail) return <Text>Loading...</Text>;
+  if (!orderDetail) return <Text style={styles.loadingText}>Đang tải...</Text>;
+  
+  const { status } = orderDetail.order;
+  const canChangeToShipping = status === 0;
+  const canChangeToDelivered = status === 0 || status === 1;
+  const canCancel = status !== 2 && status !== 3;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Chi tiết đơn hàng #{orderDetail.order.id}</Text>
-      <Text>Khách hàng: {orderDetail.order.user_name}</Text>
-      <Text>Địa chỉ: {orderDetail.order.address}</Text>
-      <Text>SĐT: {orderDetail.order.phone_number || 'Không có'}</Text>
-      <Text>Tổng giá: {orderDetail.order.total_price.toLocaleString('vi-VN')}₫</Text>
-      <Text>Trạng thái: {orderDetail.order.status === 0 ? 'Chờ xác nhận' : orderDetail.order.status === 1 ? 'Đang vận chuyển' : 'Đã giao hàng'}</Text>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoText}>Khách hàng: {orderDetail.order.user_name}</Text>
+        <Text style={styles.infoText}>Địa chỉ: {orderDetail.order.address}</Text>
+        <Text style={styles.infoText}>SĐT: {orderDetail.order.phone_number || 'Không có'}</Text>
+        <Text style={styles.infoText}>Tổng giá: {orderDetail.order.total_price.toLocaleString('vi-VN')}₫</Text>
+        <Text style={styles.infoText}>
+          Trạng thái: <Text style={getStatusStyle(orderDetail.order.status)}>
+            {getOrderStatusText(orderDetail.order.status)}
+          </Text>
+        </Text>
+      </View>
+      
       <Text style={styles.subtitle}>Danh sách sản phẩm:</Text>
       {orderDetail.items.map((item, index) => (
         <View key={index} style={styles.item}>
-          <Text>{item.product_name} - Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫</Text>
+          <Text style={styles.itemText}>{item.product_name}</Text>
+          <Text style={styles.itemDetail}>Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫</Text>
         </View>
       ))}
-      <TouchableOpacity style={styles.button} onPress={() => handleUpdateStatus(1)}>
-        <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => handleUpdateStatus(2)}>
-        <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>
-      </TouchableOpacity>
+      
+      <View style={styles.buttonContainer}>
+        {canChangeToShipping && (
+          <TouchableOpacity 
+            style={[styles.button, styles.shippingButton]} 
+            onPress={() => handleUpdateStatus(1)}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
+          </TouchableOpacity>
+        )}
+        
+        {canChangeToDelivered && (
+          <TouchableOpacity 
+            style={[styles.button, styles.deliveredButton]} 
+            onPress={() => handleUpdateStatus(2)}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>
+          </TouchableOpacity>
+        )}
+        
+        {canCancel && (
+          <TouchableOpacity 
+            style={[styles.button, styles.cancelButton]} 
+            onPress={confirmCancelOrder}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>Huỷ đơn hàng</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
+};
+
+const getStatusStyle = (status: number) => {
+  switch (status) {
+    case 0:
+      return styles.statusPending;
+    case 1:
+      return styles.statusShipping;
+    case 2:
+      return styles.statusDelivered;
+    case 3:
+      return styles.statusCancelled;
+    default:
+      return {};
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+  },
+  infoContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  infoText: {
+    fontSize: 16,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 18,
@@ -96,17 +187,57 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   item: {
-    paddingVertical: 4,
+    padding: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  itemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  itemDetail: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  buttonContainer: {
+    marginTop: 20,
   },
   button: {
-    backgroundColor: '#2196F3',
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
-    marginTop: 10,
+    marginBottom: 10,
     alignItems: 'center',
+  },
+  shippingButton: {
+    backgroundColor: '#2196F3',
+  },
+  deliveredButton: {
+    backgroundColor: '#4CAF50',
+  },
+  cancelButton: {
+    backgroundColor: '#F44336',
   },
   buttonText: {
     color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  statusPending: {
+    color: '#FF9800',
+    fontWeight: 'bold',
+  },
+  statusShipping: {
+    color: '#2196F3',
+    fontWeight: 'bold',
+  },
+  statusDelivered: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  statusCancelled: {
+    color: '#F44336',
     fontWeight: 'bold',
   },
 });

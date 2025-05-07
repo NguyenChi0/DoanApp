@@ -446,14 +446,44 @@ app.get('/orders/:id', authenticate, (req, res) => {
 });
 
 // API cập nhật trạng thái đơn hàng (chỉ admin)
+// Update the PUT /orders/:id/status endpoint to support cancellation (status 3)
+// Add this to the server.js file, replacing the existing updateStatus endpoint
+
+// API cập nhật trạng thái đơn hàng (chỉ admin)
 app.put('/orders/:id/status', authenticate, isAdmin, (req, res) => {
   const orderId = req.params.id;
   const { status } = req.body;
+  
   if (status === undefined) return res.status(400).json({ error: 'Trạng thái là bắt buộc' });
-  db.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId], (err, result) => {
-    if (err) return res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái' });
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
-    res.json({ message: 'Cập nhật trạng thái thành công' });
+  
+  // Check if status is valid (0: pending, 1: shipping, 2: delivered, 3: cancelled)
+  if (![0, 1, 2, 3].includes(status)) {
+    return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+  }
+  
+  // First check the current status
+  db.query('SELECT status FROM orders WHERE id = ?', [orderId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi kiểm tra trạng thái' });
+    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+    
+    const currentStatus = results[0].status;
+    
+    // Cannot update cancelled orders
+    if (currentStatus === 3) {
+      return res.status(400).json({ error: 'Không thể cập nhật đơn hàng đã hủy' });
+    }
+    
+    // Cannot update delivered orders except to cancel them
+    if (currentStatus === 2 && status !== 3) {
+      return res.status(400).json({ error: 'Không thể cập nhật đơn hàng đã giao' });
+    }
+    
+    // Update the status
+    db.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi server khi cập nhật trạng thái' });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Không tìm thấy đơn hàng' });
+      res.json({ message: 'Cập nhật trạng thái thành công' });
+    });
   });
 });
 

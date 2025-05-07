@@ -374,6 +374,35 @@ export const updateOrderStatus = async (orderId: number, status: number) => {
   }
 };
 
+// Make sure the updateOrderStatus function supports the cancel status (3)
+// No changes needed to the function as it already accepts any number as status
+
+// Helper functions to convert status codes to text (add these to api.ts)
+export const getOrderStatusText = (status: number): string => {
+  switch (status) {
+    case 0:
+      return 'Chờ xác nhận';
+    case 1:
+      return 'Đang vận chuyển';
+    case 2:
+      return 'Đã giao hàng';
+    case 3:
+      return 'Đã huỷ';
+    default:
+      return 'Không xác định';
+  }
+};
+
+export const getOrderStatusOptions = (): Array<{label: string, value: number}> => {
+  return [
+    { label: 'Tất cả', value: -1 },
+    { label: 'Chờ xác nhận', value: 0 },
+    { label: 'Đang vận chuyển', value: 1 },
+    { label: 'Đã giao hàng', value: 2 },
+    { label: 'Đã huỷ', value: 3 }
+  ];
+};
+
 export const logout = async () => {
   await clearToken();
 };

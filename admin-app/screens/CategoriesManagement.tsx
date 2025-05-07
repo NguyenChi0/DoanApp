@@ -1,4 +1,3 @@
-// screens/CategoriesManagement.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -14,6 +13,7 @@ import {
 import { fetchCategories, addCategory, updateCategory, deleteCategory, getToken } from '../api';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { TabParamList } from '../App';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 type CategoriesManagementNavigationProp = BottomTabNavigationProp<TabParamList, 'CategoriesManagement'>;
 
@@ -146,16 +146,16 @@ const CategoriesManagement = ({ navigation }: Props) => {
             <Text style={styles.name}>{item.name}</Text>
             <View style={styles.actions}>
               <TouchableOpacity
-                style={[styles.button, styles.editButton]}
+                style={[styles.iconButton, styles.editButton]}
                 onPress={() => openEditModal(item)}
               >
-                <Text style={styles.buttonText}>Sửa</Text>
+                <Icon name="edit" size={20} color="#fff" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.deleteButton]}
+                style={[styles.iconButton, styles.deleteButton]}
                 onPress={() => handleDeleteCategory(item.id, item.name)}
               >
-                <Text style={styles.buttonText}>Xóa</Text>
+                <Icon name="delete" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -169,8 +169,8 @@ const CategoriesManagement = ({ navigation }: Props) => {
         }
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
-        <Text style={styles.addButtonText}>Thêm danh mục</Text>
+      <TouchableOpacity style={styles.fab} onPress={openAddModal}>
+        <Icon name="add" size={24} color="#fff" />
       </TouchableOpacity>
 
       <Modal
@@ -255,6 +255,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginLeft: 8,
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
   editButton: {
     backgroundColor: '#2196F3',
   },
@@ -273,17 +281,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  addButton: {
+  fab: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
     backgroundColor: '#4CAF50',
-    padding: 16,
-    borderRadius: 8,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalContainer: {
     flex: 1,
