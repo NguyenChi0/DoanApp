@@ -1,0 +1,47 @@
+const express = require('express');
+const cors = require('cors');
+const mysql = require('mysql2');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const path = require('path');
+const multer = require('multer');
+
+const app = express();
+const port = 3000;
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'images')); // Save uploaded images to the 'images' folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Unique filename
+  }
+});
+
+const upload = multer({ storage: storage });
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use('/images', express.static(path.join(__dirname, 'images')));
+const db = mysql.createConnection({
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: 'Chi23324',
+  database: 'banhang'
+});
+
+db.connect(err => {
+  if (err) {
+    console.log('Kết nối thất bại', err);
+  } else {
+    console.log('Kết nối thành công tới MySQL');
+  }
+});
+
+
+app.listen(port, () => {
+  console.log(`Server chạy tại http://localhost:${port}`);
+});

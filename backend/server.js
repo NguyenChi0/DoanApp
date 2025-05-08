@@ -558,6 +558,29 @@ app.delete('/categories/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
+// API lấy doanh thu theo tháng (chỉ admin)
+app.get('/revenue/monthly', authenticate, isAdmin, (req, res) => {
+  const query = `
+    SELECT 
+      YEAR(created_at) as year,
+      MONTH(created_at) as month,
+      SUM(total_price) as revenue
+    FROM orders
+    WHERE status = 2
+    GROUP BY YEAR(created_at), MONTH(created_at)
+    ORDER BY year DESC, month DESC
+  `;
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server khi lấy dữ liệu doanh thu' });
+    }
+    res.json(results);
+  });
+});
+
+
+
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);
 });

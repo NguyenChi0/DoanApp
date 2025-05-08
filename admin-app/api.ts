@@ -403,6 +403,32 @@ export const getOrderStatusOptions = (): Array<{label: string, value: number}> =
   ];
 };
 
+export const fetchMonthlyRevenue = async () => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+    
+    const res = await fetch(`${BASE_URL}/revenue/monthly`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải dữ liệu doanh thu');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch monthly revenue error:', error);
+    throw error;
+  }
+};
+
 export const logout = async () => {
   await clearToken();
 };
