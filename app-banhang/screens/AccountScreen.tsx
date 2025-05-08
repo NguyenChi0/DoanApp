@@ -76,7 +76,7 @@ const AccountScreen: React.FC = () => {
       setUser({ ...user, full_name: fullName, email, address });
       Alert.alert('Thành công', 'Thông tin tài khoản đã được cập nhật');
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể cập nhật thông tin. Vui lòng thử lại.');
+      Alert.alert('Lỗi', 'Email đã tồn tại!');
     } finally {
       setLoading(false);
       setPassword('');

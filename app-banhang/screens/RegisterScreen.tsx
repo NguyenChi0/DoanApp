@@ -34,7 +34,7 @@ const RegisterScreen: React.FC = () => {
       alert('Đăng ký thành công. Vui lòng đăng nhập.');
       navigation.navigate('Login');
     } catch (error) {
-      alert('Đăng ký thất bại. Vui lòng thử lại.');
+      alert('Tên đăng nhập hoặc gmail đã được sử dụng. Vui lòng nhập tên đăng nhập hoặc gmail khác.');
     }
   };
 

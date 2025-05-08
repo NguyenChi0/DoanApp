@@ -13,6 +13,7 @@ import OrderDetailScreen from './screens/OrderDetailScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import AccountScreen from './screens/AccountScreen';
+import ContactScreen from './screens/ContactScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
@@ -30,6 +31,7 @@ type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Account: undefined;
+  Contact: undefined;
 };
 
 // Thành phần con để hiển thị nút "Đăng Nhập" trong header
@@ -121,6 +123,20 @@ const TabNavigator = () => {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons 
               name={focused ? 'receipt' : 'receipt-outline'} 
+              size={size} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      <Tab.Screen 
+        name="Contact" 
+        component={ContactScreen} 
+        options={{
+          title: 'Liên hệ',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'call' : 'call-outline'} 
               size={size} 
               color={color} 
             />

@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 4,
   },
-  pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
+  pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },              
   picker: { height: 50 },
   addButton: {
     backgroundColor: '#007AFF',
