@@ -108,7 +108,7 @@ const AccountScreen: React.FC = () => {
   if (!token) {
     return (
       <View style={styles.centeredContainer}>
-        <Ionicons name="person-circle-outline" size={80} color="#6A7BF7" />
+        <Ionicons name="person-circle-outline" size={80} color="#4B0082" />
         <Text style={styles.errorText}>Vui lòng đăng nhập để chỉnh sửa thông tin</Text>
         <TouchableOpacity 
           style={styles.loginButton} 
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   updateButton: {
-    backgroundColor: '#6A7BF7',
+    backgroundColor: '#4B0082',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#a0a8e0',
   },
   logoutButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ff6b6b',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     borderColor: '#ff6b6b',
   },
   logoutButtonText: {
-    color: '#ff6b6b',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   loginButton: {
-    backgroundColor: '#6A7BF7',
+    backgroundColor: '#4B0082',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 40,

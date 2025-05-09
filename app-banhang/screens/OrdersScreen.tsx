@@ -154,7 +154,7 @@ const OrdersScreen: React.FC = () => {
   if (!token) {
     return (
       <View style={styles.centeredContainer}>
-        <Ionicons name="cart-outline" size={80} color="#6A7BF7" />
+        <Ionicons name="cart-outline" size={80} color="#4B0082" />
         <Text style={styles.errorText}>Vui lòng đăng nhập để xem đơn hàng</Text>
         <TouchableOpacity 
           style={styles.loginButton} 
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loginButton: {
-    backgroundColor: '#6A7BF7',
+    backgroundColor: '#4B0082',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 40,
