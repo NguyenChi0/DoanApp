@@ -446,10 +446,6 @@ app.get('/orders/:id', authenticate, (req, res) => {
 });
 
 // API cập nhật trạng thái đơn hàng (chỉ admin)
-// Update the PUT /orders/:id/status endpoint to support cancellation (status 3)
-// Add this to the server.js file, replacing the existing updateStatus endpoint
-
-// API cập nhật trạng thái đơn hàng (chỉ admin)
 app.put('/orders/:id/status', authenticate, isAdmin, (req, res) => {
   const orderId = req.params.id;
   const { status } = req.body;
@@ -579,7 +575,109 @@ app.get('/revenue/monthly', authenticate, isAdmin, (req, res) => {
   });
 });
 
+// API lấy tất cả user (chỉ admin)
+app.get('/users', authenticate, isAdmin, (req, res) => {
+  db.query('SELECT id, username, email, full_name, address, created_at, role FROM users', (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server khi lấy danh sách user' });
+    }
+    res.json(results);
+  });
+});
 
+// API thêm user (chỉ admin, hỗ trợ tạo tài khoản admin)
+app.post('/users', authenticate, isAdmin, (req, res) => {
+  const { username, password, email, full_name, address, role } = req.body;
+  if (!username || !password || !email) {
+    return res.status(400).json({ error: 'Username, password, và email là bắt buộc' });
+  }
+  db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server' });
+    if (results.length > 0) return res.status(400).json({ error: 'Username hoặc email đã tồn tại' });
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) return res.status(500).json({ error: 'Lỗi khi mã hóa mật khẩu' });
+      db.query('INSERT INTO users (username, password, email, full_name, address, role) VALUES (?, ?, ?, ?, ?, ?)',
+        [username, hashedPassword, email, full_name || null, address || null, role || 0],
+        (err, result) => {
+          if (err) return res.status(500).json({ error: 'Lỗi khi tạo user' });
+          res.status(201).json({ message: 'Tạo user thành công', id: result.insertId });
+        }
+      );
+    });
+  });
+});
+
+// API cập nhật user (chỉ admin)
+app.put('/users/:id', authenticate, isAdmin, (req, res) => {
+  const userId = req.params.id;
+  const { username, email, full_name, address, password, role } = req.body;
+
+  db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server' });
+    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
+
+    let query = 'UPDATE users SET ';
+    const values = [];
+    const updates = [];
+
+    if (username) {
+      updates.push('username = ?');
+      values.push(username);
+    }
+    if (email) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (full_name) {
+      updates.push('full_name = ?');
+      values.push(full_name);
+    }
+    if (address) {
+      updates.push('address = ?');
+      values.push(address);
+    }
+    if (role !== undefined) {
+      updates.push('role = ?');
+      values.push(role);
+    }
+
+    if (password) {
+      bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) return res.status(500).json({ error: 'Lỗi khi mã hóa mật khẩu' });
+        updates.push('password = ?');
+        values.push(hashedPassword);
+        query += updates.join(', ') + ' WHERE id = ?';
+        values.push(userId);
+        db.query(query, values, (err, result) => {
+          if (err) return res.status(500).json({ error: 'Lỗi khi cập nhật user' });
+          res.json({ message: 'Cập nhật user thành công' });
+        });
+      });
+      return;
+    }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'Không có thông tin cập nhật' });
+    query += updates.join(', ') + ' WHERE id = ?';
+    values.push(userId);
+    db.query(query, values, (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi khi cập nhật user' });
+      res.json({ message: 'Cập nhật user thành công' });
+    });
+  });
+});
+
+// API xóa user (chỉ admin)
+app.delete('/users/:id', authenticate, isAdmin, (req, res) => {
+  const userId = req.params.id;
+  db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server' });
+    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
+    db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi khi xóa user' });
+      res.json({ message: 'Xóa user thành công' });
+    });
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);

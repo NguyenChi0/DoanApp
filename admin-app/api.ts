@@ -374,10 +374,117 @@ export const updateOrderStatus = async (orderId: number, status: number) => {
   }
 };
 
-// Make sure the updateOrderStatus function supports the cancel status (3)
-// No changes needed to the function as it already accepts any number as status
+// API quản lý user
+export const fetchUsers = async () => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải danh sách user');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch users error:', error);
+    throw error;
+  }
+};
 
-// Helper functions to convert status codes to text (add these to api.ts)
+export const addUser = async (user: {
+  username: string;
+  password: string;
+  email: string;
+  full_name?: string;
+  address?: string;
+  role?: number;
+}) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(user),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể thêm user');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Add user error:', error);
+    throw error;
+  }
+};
+
+export const updateUser = async (id: number, user: {
+  username?: string;
+  email?: string;
+  full_name?: string;
+  address?: string;
+  password?: string;
+  role?: number;
+}) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/users/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(user),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể cập nhật user');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Update user error:', error);
+    throw error;
+  }
+};
+
+export const deleteUser = async (id: number) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/users/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể xóa user');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    throw error;
+  }
+};
+
+// Helper functions to convert status codes to text
 export const getOrderStatusText = (status: number): string => {
   switch (status) {
     case 0:
