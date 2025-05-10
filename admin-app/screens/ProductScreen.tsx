@@ -13,8 +13,9 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, TabParamList } from '../App';
-import { fetchProducts, deleteProduct, logout } from '../api';
+import { fetchProducts, deleteProduct, logout, fetchCategories } from '../api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Picker } from '@react-native-picker/picker';
 
 type ProductScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Product'>,
@@ -35,9 +36,16 @@ type Product = {
   category_id: number;
 };
 
+type Category = {
+  id: number;
+  name: string;
+};
+
 const ProductScreen = ({ navigation }: Props) => {
   const [products, setProducts] = React.useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = React.useState<Product[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = React.useState<number>(0);
   const [searchQuery, setSearchQuery] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -48,7 +56,7 @@ const ProductScreen = ({ navigation }: Props) => {
     });
   }, [navigation]);
 
-  const loadProducts = async (showRefreshing = false) => {
+  const loadData = async (showRefreshing = false) => {
     if (showRefreshing) {
       setIsRefreshing(true);
     } else if (!isRefreshing) {
@@ -56,33 +64,52 @@ const ProductScreen = ({ navigation }: Props) => {
     }
 
     try {
-      const data = await fetchProducts();
-      setProducts(data);
-      setFilteredProducts(data);
+      const [productsData, categoriesData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories(),
+      ]);
+      setProducts(productsData);
+      setCategories([{ id: 0, name: 'Tất cả' }, ...categoriesData]);
+      filterProducts(productsData, searchQuery, selectedCategory);
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể tải danh sách sản phẩm');
+      Alert.alert('Lỗi', error.message || 'Không thể tải dữ liệu');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
   };
 
+  const filterProducts = (products: Product[], query: string, categoryId: number) => {
+    let filtered = products;
+
+    if (query.trim() !== '') {
+      filtered = filtered.filter(
+        item =>
+          item.name.toLowerCase().includes(query.toLowerCase()) ||
+          item.description.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    if (categoryId !== 0) {
+      filtered = filtered.filter(item => item.category_id === categoryId);
+    }
+
+    setFilteredProducts(filtered);
+  };
+
   const handleSearch = (text: string) => {
     setSearchQuery(text);
-    if (text.trim() === '') {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(item => 
-        item.name.toLowerCase().includes(text.toLowerCase()) ||
-        item.description.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    }
+    filterProducts(products, text, selectedCategory);
   };
 
   const clearSearch = () => {
     setSearchQuery('');
-    setFilteredProducts(products);
+    filterProducts(products, '', selectedCategory);
+  };
+
+  const handleCategorySelect = (categoryId: number) => {
+    setSelectedCategory(categoryId);
+    filterProducts(products, searchQuery, categoryId);
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -98,7 +125,7 @@ const ProductScreen = ({ navigation }: Props) => {
             try {
               await deleteProduct(id);
               Alert.alert('Thành công', 'Đã xóa sản phẩm');
-              loadProducts();
+              loadData();
             } catch (error: any) {
               Alert.alert('Lỗi xóa', error.message || 'Không thể xóa sản phẩm');
             }
@@ -126,7 +153,7 @@ const ProductScreen = ({ navigation }: Props) => {
   };
 
   React.useEffect(() => {
-    loadProducts();
+    loadData();
   }, []);
 
   if (isLoading) {
@@ -155,9 +182,25 @@ const ProductScreen = ({ navigation }: Props) => {
         )}
       </View>
 
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedCategory}
+          onValueChange={(itemValue) => handleCategorySelect(itemValue)}
+          style={styles.picker}
+        >
+          {categories.map(category => (
+            <Picker.Item
+              key={category.id}
+              label={category.name}
+              value={category.id}
+            />
+          ))}
+        </Picker>
+      </View>
+
       <FlatList
         data={filteredProducts}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.item}>
             <View style={styles.productInfo}>
@@ -168,7 +211,7 @@ const ProductScreen = ({ navigation }: Props) => {
               </Text>
               <Text style={styles.stock}>Còn lại: {item.stock} sản phẩm</Text>
             </View>
-            
+
             <View style={styles.actions}>
               <TouchableOpacity
                 style={[styles.iconButton, styles.editButton]}
@@ -186,29 +229,26 @@ const ProductScreen = ({ navigation }: Props) => {
           </View>
         )}
         refreshing={isRefreshing}
-        onRefresh={() => loadProducts(true)}
+        onRefresh={() => loadData(true)}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery.length > 0 
-                ? `Không tìm thấy sản phẩm nào với từ khóa "${searchQuery}"`
+              {searchQuery.length > 0 || selectedCategory !== 0
+                ? 'Không tìm thấy sản phẩm phù hợp'
                 : 'Không có sản phẩm nào'}
             </Text>
           </View>
         }
       />
 
-      <TouchableOpacity 
-        style={styles.fab} 
+      <TouchableOpacity
+        style={styles.fab}
         onPress={() => navigation.navigate('AddProduct')}
       >
         <Icon name="add" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.logoutFab} 
-        onPress={handleLogout}
-      >
+      <TouchableOpacity style={styles.logoutFab} onPress={handleLogout}>
         <Icon name="logout" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
@@ -220,6 +260,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f5f5f5',
+    width: '100%',
   },
   centerContent: {
     justifyContent: 'center',
@@ -243,6 +284,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    width: '100%',
   },
   searchInput: {
     flex: 1,
@@ -257,6 +299,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     fontWeight: 'bold',
+  },
+  pickerContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
   item: {
     padding: 16,
@@ -299,12 +355,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
   iconButton: {
     width: 40,
     height: 40,
@@ -318,10 +368,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: '#f44336',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   emptyContainer: {
     padding: 20,

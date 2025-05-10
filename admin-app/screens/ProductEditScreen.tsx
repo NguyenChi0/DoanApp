@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 12, borderRadius: 4 },
   pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
-  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center' },
+  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center',marginBottom:30 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   imagePicker: { backgroundColor: '#ddd', padding: 10, borderRadius: 5, alignItems: 'center', marginBottom: 10 },
   imagePickerText: { color: '#333', fontSize: 16 },
