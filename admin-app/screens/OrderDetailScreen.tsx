@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp } from '@react-navigation/native'; // Add this import
 import { RootStackParamList } from '../App';
 import { fetchOrderDetails, updateOrderStatus, getOrderStatusText } from '../api';
 
+// Define navigation and route types
 type OrderDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetail'>;
+type OrderDetailScreenRouteProp = RouteProp<RootStackParamList, 'OrderDetail'>;
 
+// Define Props type
 type Props = {
   navigation: OrderDetailScreenNavigationProp;
-  route: { params: { orderId: number } };
+  route: OrderDetailScreenRouteProp;
 };
 
+// Define OrderDetail type
 type OrderDetail = {
   order: {
     id: number;
@@ -53,7 +58,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
     try {
       setIsLoading(true);
       await updateOrderStatus(orderId, newStatus);
-      setOrderDetail((prev) => prev ? { ...prev, order: { ...prev.order, status: newStatus } } : null);
+      setOrderDetail((prev) => (prev ? { ...prev, order: { ...prev.order, status: newStatus } } : null));
       Alert.alert('Thành công', 'Đã cập nhật trạng thái đơn hàng');
     } catch (error: any) {
       console.error('Error updating order status:', error);
@@ -62,27 +67,27 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
       setIsLoading(false);
     }
   };
-  
+
   const confirmCancelOrder = () => {
     Alert.alert(
       'Xác nhận huỷ đơn',
       'Bạn có chắc chắn muốn huỷ đơn hàng này?',
       [
         { text: 'Không', style: 'cancel' },
-        { text: 'Huỷ đơn', style: 'destructive', onPress: () => handleUpdateStatus(3) }
+        { text: 'Huỷ đơn', style: 'destructive', onPress: () => handleUpdateStatus(3) },
       ]
     );
   };
 
   if (!orderDetail) return <Text style={styles.loadingText}>Đang tải...</Text>;
-  
+
   const { status } = orderDetail.order;
   const canChangeToShipping = status === 0;
   const canChangeToDelivered = status === 0 || status === 1;
   const canCancel = status !== 2 && status !== 3;
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Chi tiết đơn hàng #{orderDetail.order.id}</Text>
       <View style={styles.infoContainer}>
         <Text style={styles.infoText}>Khách hàng: {orderDetail.order.user_name}</Text>
@@ -95,39 +100,41 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
           </Text>
         </Text>
       </View>
-      
+
       <Text style={styles.subtitle}>Danh sách sản phẩm:</Text>
       {orderDetail.items.map((item, index) => (
         <View key={index} style={styles.item}>
           <Text style={styles.itemText}>{item.product_name}</Text>
-          <Text style={styles.itemDetail}>Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫</Text>
+          <Text style={styles.itemDetail}>
+            Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫
+          </Text>
         </View>
       ))}
-      
+
       <View style={styles.buttonContainer}>
         {canChangeToShipping && (
-          <TouchableOpacity 
-            style={[styles.button, styles.shippingButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.shippingButton]}
             onPress={() => handleUpdateStatus(1)}
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
           </TouchableOpacity>
         )}
-        
+
         {canChangeToDelivered && (
-          <TouchableOpacity 
-            style={[styles.button, styles.deliveredButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.deliveredButton]}
             onPress={() => handleUpdateStatus(2)}
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>
           </TouchableOpacity>
         )}
-        
+
         {canCancel && (
-          <TouchableOpacity 
-            style={[styles.button, styles.cancelButton]} 
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
             onPress={confirmCancelOrder}
             disabled={isLoading}
           >
@@ -135,7 +142,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -157,8 +164,11 @@ const getStatusStyle = (status: number) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#fff',
+  },
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 20,
   },
   loadingText: {
     fontSize: 16,
