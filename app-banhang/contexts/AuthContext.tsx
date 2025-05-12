@@ -70,28 +70,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginUser = async (username: string, password: string) => {
-    try {
-      const response = await apiLogin(username, password);
-      const newToken = response.token;
-      const newUser = response.user;
-      
-      // Update state
-      setToken(newToken);
-      setUser(newUser);
-      
-      // Store in AsyncStorage
-      await AsyncStorage.setItem('token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      
-      // Set axios default header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
-      return response;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+  try {
+    const response = await apiLogin(username, password);
+    const newToken = response.token;
+    const newUser = response.user;
+
+    // Update state
+    setToken(newToken);
+    setUser(newUser);
+
+    // Store in AsyncStorage
+    await AsyncStorage.setItem('token', newToken);
+    await AsyncStorage.setItem('user', JSON.stringify(newUser));
+
+    // Set axios default header
+    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+    return response;
+  } catch (error: any) {
+    // Không log lỗi chi tiết
+    // Tùy chỉnh thông điệp lỗi
+    if (error.response) {
+      throw new Error('Tài khoản hoặc mật khẩu không đúng');
+    } else if (error.request) {
+      throw new Error('Không thể kết nối đến máy chủ');
+    } else {
+      throw new Error('Đã xảy ra lỗi không xác định');
     }
-  };
+  }
+};
 
   const registerUser = async (userData: any) => {
     try {

@@ -76,20 +76,37 @@ const OrderDetailScreen: React.FC = () => {
   const handleCancelOrder = async () => {
     if (!order) return;
 
-    setCancelLoading(true);
-    try {
-      const response = await cancelOrder(order.id);
-      Alert.alert('Thành công', response.message);
-      // Refresh order details after cancellation
-      const updatedData = await fetchOrderDetails(Number(orderId));
-      setOrder(updatedData.order);
-      setItems(updatedData.items);
-    } catch (err: any) {
-      console.error('Error cancelling order:', err);
-      Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
-    } finally {
-      setCancelLoading(false);
-    }
+    // Show confirmation dialog before cancelling
+    Alert.alert(
+      'Xác nhận hủy đơn hàng',
+      'Bạn có chắc chắn muốn hủy đơn hàng này không?',
+      [
+        {
+          text: 'Không',
+          style: 'cancel'
+        },
+        {
+          text: 'Xác Nhận',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelLoading(true);
+            try {
+              const response = await cancelOrder(order.id);
+              Alert.alert('Thành công', response.message);
+              // Refresh order details after cancellation
+              const updatedData = await fetchOrderDetails(Number(orderId));
+              setOrder(updatedData.order);
+              setItems(updatedData.items);
+            } catch (err: any) {
+              console.error('Error cancelling order:', err);
+              Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+            } finally {
+              setCancelLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatDate = (dateString: string) => {

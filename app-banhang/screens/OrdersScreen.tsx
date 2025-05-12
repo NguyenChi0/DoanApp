@@ -64,19 +64,36 @@ const OrdersScreen: React.FC = () => {
   };
 
   const handleCancelOrder = async (orderId: number) => {
-    setCancelLoadingOrderId(orderId);
-    try {
-      const response = await cancelOrder(orderId);
-      Alert.alert('Thành công', response.message);
-      // Refresh orders after cancellation
-      const updatedData = await fetchOrders();
-      setOrders(updatedData);
-    } catch (err: any) {
-      console.error('Error cancelling order:', err);
-      Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
-    } finally {
-      setCancelLoadingOrderId(null);
-    }
+    // Show confirmation dialog before cancelling
+    Alert.alert(
+      'Xác nhận hủy đơn hàng',
+      'Bạn có chắc chắn muốn hủy đơn hàng này không?',
+      [
+        {
+          text: 'Không',
+          style: 'cancel'
+        },
+        {
+          text: 'Xác Nhận',
+          style: 'destructive',
+          onPress: async () => {
+            setCancelLoadingOrderId(orderId);
+            try {
+              const response = await cancelOrder(orderId);
+              Alert.alert('Thành công', response.message);
+              // Refresh orders after cancellation
+              const updatedData = await fetchOrders();
+              setOrders(updatedData);
+            } catch (err: any) {
+              console.error('Error cancelling order:', err);
+              Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+            } finally {
+              setCancelLoadingOrderId(null);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const formatDate = (dateString: string) => {

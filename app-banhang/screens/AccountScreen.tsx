@@ -15,7 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { updateUser } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons'; // Cần cài thêm expo/vector-icons
+import { Ionicons } from '@expo/vector-icons';
 
 type RootStackParamList = {
   Login: undefined;
@@ -95,7 +95,11 @@ const AccountScreen: React.FC = () => {
           onPress: async () => {
             try {
               await logout();
-              navigation.navigate('Home');
+              // Reset navigation stack và chuyển đến màn hình Home
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
             } catch (error) {
               console.error('Logout error:', error);
             }

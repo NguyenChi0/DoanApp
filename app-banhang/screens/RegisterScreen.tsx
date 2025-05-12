@@ -82,7 +82,7 @@ const RegisterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    backgroundColor: '#F0F8FF',
+    backgroundColor: '#F3E8FF',
     flexGrow: 1,
     justifyContent: 'center',
   },
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
-    color: '#005B9F',
+    color: '#4C1D95',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#CCE6F6',
+    borderColor: '#D6BCFA',
     marginBottom: 15,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   button: {
-    backgroundColor: '#007ACC',
+    backgroundColor: '#6B46C1',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   link: {
-    color: '#007ACC',
+    color: '#6B46C1',
     fontSize: 15,
     textAlign: 'center',
     textDecorationLine: 'underline',
