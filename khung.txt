@@ -1,0 +1,80 @@
+const express = require('express');
+const cors = require('cors');
+const mysql = require('mysql2');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const path = require('path');
+const multer = require('multer');
+
+const app = express();
+const port = 3000;
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'images')); // Save uploaded images to the 'images' folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname); // Unique filename
+  }
+});
+
+const upload = multer({ storage: storage });
+
+app.use(cors());
+app.use(bodyParser.json());
+app.use('/images', express.static(path.join(__dirname, 'images')));
+const db = mysql.createConnection({
+  host: 'localhost',
+  port: 3306,
+  user: 'root',
+  password: 'Chi23324',
+  database: 'banhang'
+});
+
+db.connect(err => {
+  if (err) {
+    console.log('Kết nối thất bại', err);
+  } else {
+    console.log('Kết nối thành công tới MySQL');
+  }
+});
+
+// API xóa sản phẩm (chỉ admin)
+app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
+  const productId = req.params.id;
+  
+  db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Lỗi server' });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+    }
+    
+    db.query('DELETE FROM products WHERE id = ?', [productId], (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
+      }
+      res.json({ message: 'Xóa sản phẩm thành công' });
+    });
+  });
+});
+
+// API xóa user (chỉ admin)
+app.delete('/users/:id', authenticate, isAdmin, (req, res) => {
+  const userId = req.params.id;
+  db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server' });
+    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
+    db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Lỗi khi xóa user' });
+      res.json({ message: 'Xóa user thành công' });
+    });
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Server chạy tại http://localhost:${port}`);
+});

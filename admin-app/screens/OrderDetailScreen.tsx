@@ -46,7 +46,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
         setOrderDetail(data);
       } catch (error) {
         console.error('Error fetching order details:', error);
-        Alert.alert('Lỗi', 'Không thể tải thông tin đơn hàng');
+        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
       } finally {
         setIsLoading(false);
       }

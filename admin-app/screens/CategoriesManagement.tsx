@@ -69,7 +69,7 @@ const CategoriesManagement = ({ navigation }: Props) => {
       setModalVisible(false);
       loadCategories();
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể thêm danh mục');
+      Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để thêm danh mục');
     }
   };
 
@@ -87,7 +87,7 @@ const CategoriesManagement = ({ navigation }: Props) => {
       setModalVisible(false);
       loadCategories();
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message || 'Không thể cập nhật danh mục');
+      Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để cập nhật danh mục');
     }
   };
 
@@ -106,7 +106,7 @@ const CategoriesManagement = ({ navigation }: Props) => {
               Alert.alert('Thành công', 'Đã xóa danh mục');
               loadCategories();
             } catch (error: any) {
-              Alert.alert('Lỗi xóa', error.message || 'Không thể xóa danh mục');
+              Alert.alert('Lỗi xóa', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để xóa sản phẩm');
             }
           },
         },

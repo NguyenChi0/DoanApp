@@ -77,7 +77,7 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
       Alert.alert('Thành công', 'Cập nhật sản phẩm thành công');
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Lỗi', 'Không thể cập nhật sản phẩm');
+      Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
     } finally {
       setIsLoading(false);
     }

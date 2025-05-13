@@ -127,7 +127,7 @@ const ProductScreen = ({ navigation }: Props) => {
               Alert.alert('Thành công', 'Đã xóa sản phẩm');
               loadData();
             } catch (error: any) {
-              Alert.alert('Lỗi xóa', error.message || 'Không thể xóa sản phẩm');
+              Alert.alert('Lỗi!!!', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để xóa sản phẩm!');
             }
           },
         },

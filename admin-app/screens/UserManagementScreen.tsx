@@ -209,7 +209,7 @@ const UserManagementScreen: React.FC = () => {
         data={users}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={<Text style={styles.emptyText}>Không có user nào</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>Không có user nào hoặc phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</Text>}
       />
       
       <TouchableOpacity style={styles.fabButton} onPress={openAddModal}>
@@ -229,7 +229,7 @@ const UserManagementScreen: React.FC = () => {
           >
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{isEditing ? 'Sửa thông tin user' : 'Thêm user mới'}</Text>
+                <Text style={styles.modalTitle}>{isEditing ? 'Sửa thông tin user' : 'Thêm tài khoản mới'}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
                   <Icon name="close" size={24} color="#333" />
                 </TouchableOpacity>
