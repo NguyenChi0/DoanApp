@@ -175,10 +175,10 @@ app.get('/categories', (req, res) => {
 // API lấy tất cả sản phẩm (không cần auth)
 app.get('/products', (req, res) => {
   const { category_id } = req.query;
-  let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id';
+  let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status = 1';
   const values = [];
   if (category_id) {
-    query += ' WHERE p.category_id = ?';
+    query += ' AND p.category_id = ?';
     values.push(category_id);
   }
   db.query(query, values, (err, results) => {
@@ -322,23 +322,29 @@ app.put('/products/:id', authenticate, isAdmin, upload.single('image'), (req, re
   });
 });
 
-// API xóa sản phẩm (chỉ admin)
 app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
-  const productId = req.params.id;
-  
+  const productIdStr = req.params.id;
+  const productId = parseInt(productIdStr, 10);
+  if (isNaN(productId)) {
+    return res.status(400).json({ error: 'ID sản phẩm không hợp lệ' });
+  }
+  console.log('Đang thử ẩn sản phẩm với ID:', productId);
+
   db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
     if (err) {
+      console.error('Lỗi khi truy vấn sản phẩm:', err);
       return res.status(500).json({ error: 'Lỗi server' });
     }
     if (result.length === 0) {
       return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
     }
-    
-    db.query('DELETE FROM products WHERE id = ?', [productId], (err) => {
+
+    db.query('UPDATE products SET status = 0 WHERE id = ?', [productId], (err) => {
       if (err) {
-        return res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
+        console.error('Lỗi khi ẩn sản phẩm:', err);
+        return res.status(500).json({ error: 'Lỗi server khi ẩn sản phẩm' });
       }
-      res.json({ message: 'Xóa sản phẩm thành công' });
+      res.json({ message: 'Đã ẩn sản phẩm thành công' });
     });
   });
 });
@@ -666,15 +672,31 @@ app.put('/users/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
-// API xóa user (chỉ admin)
+// Xóa user 
 app.delete('/users/:id', authenticate, isAdmin, (req, res) => {
   const userId = req.params.id;
-  db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
-    if (err) return res.status(500).json({ error: 'Lỗi server' });
-    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
-    db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
-      if (err) return res.status(500).json({ error: 'Lỗi khi xóa user' });
-      res.json({ message: 'Xóa user thành công' });
+  
+  // Kiểm tra xem user có đơn hàng không
+  db.query('SELECT * FROM orders WHERE user_id = ?', [userId], (err, orderResults) => {
+    if (err) return res.status(500).json({ error: 'Lỗi server khi kiểm tra đơn hàng' });
+    
+    // Nếu người dùng đã có đơn hàng, không cho phép xóa
+    if (orderResults.length > 0) {
+      return res.status(400).json({ 
+        error: 'Không thể xóa user này vì đã có đơn hàng trong hệ thống',
+        hasOrders: true 
+      });
+    }
+    
+    // Nếu không có đơn hàng, tiếp tục với việc xóa user
+    db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
+      if (err) return res.status(500).json({ error: 'Lỗi server' });
+      if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
+      
+      db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
+        if (err) return res.status(500).json({ error: 'Tài khoản đã phát sinh đơn hàng, không thể xóa' });
+        res.json({ message: 'Xóa user thành công' });
+      });
     });
   });
 });

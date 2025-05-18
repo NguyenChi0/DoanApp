@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native'; // Add StyleSheet import
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -43,6 +44,13 @@ function MainTabs() {
         tabBarActiveTintColor: '#2196F3',
         tabBarInactiveTintColor: '#666',
         tabBarStyle: { backgroundColor: '#fff' },
+        headerStyle: {
+          backgroundColor: '#2196F3',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       }}
     >
       <Tab.Screen 
@@ -94,71 +102,80 @@ function MainTabs() {
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 15, // Add 10px top padding
+  },
+});
+
 export default function App(): React.ReactElement {
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        initialRouteName="Login"
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#2196F3',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          headerTitleAlign: 'center',
-        }}
-      >
-        <Stack.Screen 
-          name="Login" 
-          component={LoginScreen} 
-          options={{ 
-            title: 'Đăng nhập Admin',
-            headerShown: false 
+      <View style={styles.container}>
+        <Stack.Navigator 
+          initialRouteName="Login"
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#2196F3',
+            },
+            headerTintColor: '#fff',
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+            headerTitleAlign: 'center',
           }}
-        />
-        <Stack.Screen 
-          name="MainTabs" 
-          component={MainTabs} 
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen 
-          name="ProductEdit" 
-          component={ProductEditScreen} 
-          options={{
-            title: 'Chỉnh sửa sản phẩm',
-          }}
-        />
-        <Stack.Screen 
-          name="AddProduct" 
-          component={AddProductScreen} 
-          options={{
-            title: 'Thêm sản phẩm',
-          }}
-        />
-        <Stack.Screen 
-          name="OrderDetail" 
-          component={OrderDetailScreen} 
-          options={{
-            title: 'Chi tiết đơn hàng',
-          }}
-        />
-        <Stack.Screen 
-          name="RevenueReport" 
-          component={RevenueReportScreen} 
-          options={{
-            title: 'Báo cáo Doanh thu',
-          }}
-        />
-        <Stack.Screen 
-          name="UserManagement" 
-          component={UserManagementScreen} 
-          options={{
-            title: 'Quản lý user',
-          }}
-        />
-      </Stack.Navigator>
+        >
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen} 
+            options={{ 
+              title: 'Đăng nhập Admin',
+              headerShown: false 
+            }}
+          />
+          <Stack.Screen 
+            name="MainTabs" 
+            component={MainTabs} 
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen 
+            name="ProductEdit" 
+            component={ProductEditScreen} 
+            options={{
+              title: 'Chỉnh sửa sản phẩm',
+            }}
+          />
+          <Stack.Screen 
+            name="AddProduct" 
+            component={AddProductScreen} 
+            options={{
+              title: 'Thêm sản phẩm',
+            }}
+          />
+          <Stack.Screen 
+            name="OrderDetail" 
+            component={OrderDetailScreen} 
+            options={{
+              title: 'Chi tiết đơn hàng',
+            }}
+          />
+          <Stack.Screen 
+            name="RevenueReport" 
+            component={RevenueReportScreen} 
+            options={{
+              title: 'Báo cáo Doanh thu',
+            }}
+          />
+          <Stack.Screen 
+            name="UserManagement" 
+            component={UserManagementScreen} 
+            options={{
+              title: 'Quản lý user',
+            }}
+          />
+        </Stack.Navigator>
+      </View>
     </NavigationContainer>
   );
 }

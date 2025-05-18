@@ -34,6 +34,7 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
   const [categoryId, setCategoryId] = useState(product.category_id?.toString() || '');
   const [categories, setCategories] = useState([]);
   const [image, setImage] = useState<string | null>(product.image || null);
+  const [isNewImageSelected, setIsNewImageSelected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -62,7 +63,10 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
       quality: 1,
     });
 
-    if (!result.canceled) setImage(result.assets[0].uri);
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+      setIsNewImageSelected(true); // Đánh dấu rằng một ảnh mới đã được chọn
+    }
   };
 
   const handleSave = async () => {
@@ -73,7 +77,18 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
 
     setIsLoading(true);
     try {
-      await updateProduct(product.id, { name, description, price: parseFloat(price), stock: parseInt(stock), category_id: categoryId ? parseInt(categoryId) : undefined, image });
+      await updateProduct(
+        product.id, 
+        { 
+          name, 
+          description, 
+          price: parseFloat(price), 
+          stock: parseInt(stock), 
+          category_id: categoryId ? parseInt(categoryId) : undefined, 
+          image 
+        }, 
+        isNewImageSelected // Truyền cờ đánh dấu ảnh mới
+      );
       Alert.alert('Thành công', 'Cập nhật sản phẩm thành công');
       navigation.goBack();
     } catch (error) {
@@ -110,9 +125,13 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
         </Picker>
       </View>
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
-      </TouchableOpacity>
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#007AFF" style={{marginTop: 20}} />
+      ) : (
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Lưu thay đổi</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -122,7 +141,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 12, borderRadius: 4 },
   pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
-  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center',marginBottom:30 },
+  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center', marginBottom: 30 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   imagePicker: { backgroundColor: '#ddd', padding: 10, borderRadius: 5, alignItems: 'center', marginBottom: 10 },
   imagePickerText: { color: '#333', fontSize: 16 },

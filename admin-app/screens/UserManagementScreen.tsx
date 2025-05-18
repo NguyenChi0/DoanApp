@@ -127,7 +127,16 @@ const UserManagementScreen: React.FC = () => {
             Alert.alert('Thành công', 'Xóa user thành công');
             fetchUserList();
           } catch (error: any) {
-            Alert.alert('Lỗi', error.message || 'Không thể xóa user');
+            // Kiểm tra nếu lỗi liên quan đến user đã có đơn hàng
+            if (error.hasOrders) {
+              Alert.alert(
+                'Không thể xóa',
+                'Không thể xóa user này vì đã có đơn hàng trong hệ thống',
+                [{ text: 'Đóng', style: 'default' }]
+              );
+            } else {
+              Alert.alert('Lỗi', error.message || 'Không thể xóa user');
+            }
           }
         },
       },

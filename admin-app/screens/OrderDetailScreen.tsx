@@ -68,10 +68,32 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
     }
   };
 
+  const confirmUpdateToShipping = () => {
+    Alert.alert(
+      'Xác nhận cập nhật',
+      'Bạn có chắc chắn đơn hàng ĐANG ĐƯỢC VẬN CHUYỂN?',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        { text: 'Xác nhận', onPress: () => handleUpdateStatus(1) },
+      ]
+    );
+  };
+
+  const confirmUpdateToDelivered = () => {
+    Alert.alert(
+      'Xác nhận cập nhật',
+      'Bạn có chắc chắn đơn hàng ĐÃ ĐƯỢC GIAO?',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        { text: 'Xác nhận', onPress: () => handleUpdateStatus(2) },
+      ]
+    );
+  };
+
   const confirmCancelOrder = () => {
     Alert.alert(
       'Xác nhận huỷ đơn',
-      'Bạn có chắc chắn muốn huỷ đơn hàng này?',
+      'Bạn có chắc chắn HỦY ĐƠN HÀNG?',
       [
         { text: 'Không', style: 'cancel' },
         { text: 'Huỷ đơn', style: 'destructive', onPress: () => handleUpdateStatus(3) },
@@ -115,7 +137,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
         {canChangeToShipping && (
           <TouchableOpacity
             style={[styles.button, styles.shippingButton]}
-            onPress={() => handleUpdateStatus(1)}
+            onPress={confirmUpdateToShipping}
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
@@ -125,7 +147,7 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
         {canChangeToDelivered && (
           <TouchableOpacity
             style={[styles.button, styles.deliveredButton]}
-            onPress={() => handleUpdateStatus(2)}
+            onPress={confirmUpdateToDelivered}
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>

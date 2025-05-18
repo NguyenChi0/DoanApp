@@ -187,11 +187,12 @@ export const updateProduct = async (
   }
 };
 
-export const deleteProduct = async (id: number) => {
+// Cập nhật hàm deleteProduct thành hideProduct (ẩn sản phẩm)
+export const hideProduct = async (id: number) => {
   try {
     const token = await getToken();
     const res = await fetch(`${BASE_URL}/products/${id}`, {
-      method: 'DELETE',
+      method: 'DELETE', // Vẫn giữ method DELETE để không phải thay đổi phía client
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -200,12 +201,12 @@ export const deleteProduct = async (id: number) => {
     const data = await res.json();
     
     if (!res.ok) {
-      throw new Error(data.error || 'Không thể xóa sản phẩm');
+      throw new Error(data.error || 'Không thể ẩn sản phẩm');
     }
     
     return data;
   } catch (error: any) {
-    console.error('Delete product error:', error);
+    console.error('Hide product error:', error);
     throw error;
   }
 };
@@ -474,7 +475,15 @@ export const deleteUser = async (id: number) => {
     const data = await res.json();
     
     if (!res.ok) {
-      throw new Error(data.error || 'Không thể xóa user');
+      // Kiểm tra nếu lỗi liên quan đến người dùng đã có đơn hàng
+      if (data.hasOrders) {
+        const error = new Error(data.error || 'Không thể xóa user');
+        // Thêm thuộc tính hasOrders vào đối tượng error
+        (error as any).hasOrders = true;  
+        throw error;
+      } else {
+        throw new Error(data.error || 'Không thể xóa user');
+      }
     }
     
     return data;

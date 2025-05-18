@@ -8,12 +8,14 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  StyleProp,
+  TextStyle,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, TabParamList } from '../App';
-import { fetchProducts, deleteProduct, logout, fetchCategories } from '../api';
+import { fetchProducts, hideProduct, logout, fetchCategories } from '../api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Picker } from '@react-native-picker/picker';
 
@@ -34,6 +36,7 @@ type Product = {
   image: string;
   stock: number;
   category_id: number;
+  status: number;
 };
 
 type Category = {
@@ -50,11 +53,22 @@ const ProductScreen = ({ navigation }: Props) => {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  React.useEffect(() => {
-    navigation.setOptions({
-      title: 'Quản lý sản phẩm',
-    });
-  }, [navigation]);
+  const handleLogout = async () => {
+    Alert.alert(
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Đăng xuất',
+          onPress: async () => {
+            await logout();
+            navigation.navigate('Login');
+          },
+        },
+      ]
+    );
+  };
 
   const loadData = async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -86,7 +100,7 @@ const ProductScreen = ({ navigation }: Props) => {
       filtered = filtered.filter(
         item =>
           item.name.toLowerCase().includes(query.toLowerCase()) ||
-          item.description.toLowerCase().includes(query.toLowerCase())
+          item.description?.toLowerCase().includes(query.toLowerCase())
       );
     }
 
@@ -112,40 +126,23 @@ const ProductScreen = ({ navigation }: Props) => {
     filterProducts(products, searchQuery, categoryId);
   };
 
-  const handleDelete = async (id: number, name: string) => {
+  const handleHide = async (id: number, name: string) => {
     Alert.alert(
-      'Xác nhận xóa',
-      `Bạn có chắc chắn muốn xóa sản phẩm "${name}"?`,
+      'Xác nhận ẩn',
+      `Bạn có chắc chắn muốn ẩn sản phẩm "${name}"?`,
       [
         { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Ẩn',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteProduct(id);
-              Alert.alert('Thành công', 'Đã xóa sản phẩm');
+              await hideProduct(id);
+              Alert.alert('Thành công', 'Đã ẩn sản phẩm');
               loadData();
             } catch (error: any) {
-              Alert.alert('Lỗi!!!', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để xóa sản phẩm!');
+              Alert.alert('Lỗi', error.message || 'Không thể ẩn sản phẩm');
             }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleLogout = async () => {
-    Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đăng xuất',
-          onPress: async () => {
-            await logout();
-            navigation.navigate('Login');
           },
         },
       ]
@@ -166,7 +163,15 @@ const ProductScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Danh sách sản phẩm ({filteredProducts.length})</Text>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title as StyleProp<TextStyle>}>Danh sách sản phẩm ({filteredProducts.length})</Text>
+        <TouchableOpacity 
+          style={styles.headerLogoutButton} 
+          onPress={handleLogout}
+        >
+          <Icon name="logout" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.searchContainer}>
         <TextInput
@@ -177,7 +182,7 @@ const ProductScreen = ({ navigation }: Props) => {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity style={styles.clearButton} onPress={clearSearch}>
-            <Text style={styles.clearButtonText}>✕</Text>
+            <Text style={styles.clearButtonText as StyleProp<TextStyle>}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -221,9 +226,9 @@ const ProductScreen = ({ navigation }: Props) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.iconButton, styles.deleteButton]}
-                onPress={() => handleDelete(item.id, item.name)}
+                onPress={() => handleHide(item.id, item.name)}
               >
-                <Icon name="delete" size={20} color="#fff" />
+                <Icon name="visibility-off" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
           </View>
@@ -247,10 +252,6 @@ const ProductScreen = ({ navigation }: Props) => {
       >
         <Icon name="add" size={24} color="#fff" />
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.logoutFab} onPress={handleLogout}>
-        <Icon name="logout" size={24} color="#fff" />
-      </TouchableOpacity>
     </View>
   );
 };
@@ -266,10 +267,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: '#333',
   },
   searchContainer: {
@@ -380,7 +386,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 16,
     right: 16,
     backgroundColor: '#4CAF50',
     width: 56,
@@ -394,21 +400,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  logoutFab: {
-    position: 'absolute',
-    bottom: 16,
-    right: 16,
+  headerLogoutButton: {
     backgroundColor: '#f44336',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
   },
 });
 
