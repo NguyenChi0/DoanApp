@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  StatusBar,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -86,7 +88,7 @@ const ProductDetailScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#6A5ACD" />
         <Text style={styles.loadingText}>Đang tải thông tin sản phẩm...</Text>
       </View>
     );
@@ -95,7 +97,8 @@ const ProductDetailScreen: React.FC = () => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="exclamation-triangle" size={50} color="#dc3545" style={styles.errorIcon} />
+        <Icon name="exclamation-circle" size={70} color="#FF6347" style={styles.errorIcon} />
+        <Text style={styles.errorTitle}>Đã xảy ra lỗi!</Text>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => {
           setLoading(true);
@@ -115,170 +118,275 @@ const ProductDetailScreen: React.FC = () => {
   }
 
   if (!product) {
-    return <Text>Không tìm thấy sản phẩm.</Text>;
+    return (
+      <View style={styles.emptyContainer}>
+        <Icon name="search" size={60} color="#AAAAAA" />
+        <Text style={styles.emptyText}>Không tìm thấy sản phẩm.</Text>
+        <TouchableOpacity style={styles.goBackButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.goBackButtonText}>Quay lại</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={20} color="#333" />
-          <Text style={styles.backButtonText}>Trở lại</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.imageContainer}>
-        <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={styles.name}>{product.name}</Text>
-        <View style={styles.priceStockContainer}>
-          <Text style={styles.price}>${product.price}</Text>
-          <View style={styles.stockContainer}>
-            <Icon
-              name={product.stock > 0 ? 'check-circle' : 'times-circle'}
-              size={16}
-              color={product.stock > 0 ? '#28a745' : '#dc3545'}
-              style={styles.stockIcon}
-            />
-            <Text style={styles.stockText}>{product.stock > 0 ? `Còn ${product.stock} sản phẩm` : 'Hết hàng'}</Text>
+    <View style={styles.container}>
+      <StatusBar backgroundColor="#6A5ACD" barStyle="light-content" />
+      
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+        </View>
+        
+        <View style={styles.detailsContainer}>
+          <View style={styles.nameContainer}>
+            <Text style={styles.name}>{product.name}</Text>
           </View>
+          
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>{product.price.toLocaleString('vi-VN')}₫</Text>
+            <View style={styles.stockContainer}>
+              {product.stock > 0 ? (
+                <View style={styles.inStockBadge}>
+                  <Icon name="check" size={12} color="#FFFFFF" />
+                  <Text style={styles.stockText}>Còn hàng</Text>
+                </View>
+              ) : (
+                <View style={styles.outOfStockBadge}>
+                  <Icon name="times" size={12} color="#FFFFFF" />
+                  <Text style={styles.stockTextOut}>Hết hàng</Text>
+                </View>
+              )}
+            </View>
+          </View>
+          
+          {product.stock > 0 && (
+            <View style={styles.quantityInfoContainer}>
+              <Icon name="cube" size={16} color="#666666" />
+              <Text style={styles.quantityText}>Còn {product.stock} sản phẩm</Text>
+            </View>
+          )}
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.sectionTitle}>Mô tả sản phẩm</Text>
+            <Text style={styles.descriptionText}>{product.description}</Text>
+          </View>
+          
+          <View style={styles.divider} />
+          
+          <View style={styles.deliveryInfoContainer}>
+            <Text style={styles.sectionTitle}>Thông tin vận chuyển</Text>
+            <View style={styles.deliveryItem}>
+              <Icon name="truck" size={16} color="#6A5ACD" style={styles.deliveryIcon} />
+              <Text style={styles.deliveryText}>Giao hàng nhanh trong 24h</Text>
+            </View>
+            <View style={styles.deliveryItem}>
+              <Icon name="refresh" size={16} color="#6A5ACD" style={styles.deliveryIcon} />
+              <Text style={styles.deliveryText}>Đổi trả trong vòng 7 ngày</Text>
+            </View>
+            <View style={styles.deliveryItem}>
+              <Icon name="shield" size={16} color="#6A5ACD" style={styles.deliveryIcon} />
+              <Text style={styles.deliveryText}>Bảo hành chính hãng 12 tháng</Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity
+            style={[styles.addToCartButtonInline, product.stock <= 0 && styles.disabledButton]}
+            onPress={handleAddToCart}
+            disabled={product.stock <= 0}
+          >
+            <Icon name="shopping-cart" size={20} color="white" style={styles.cartIcon} />
+            <Text style={styles.addToCartText}>
+              {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
+            </Text>
+          </TouchableOpacity>
+          
+          <View style={styles.spacer} />
         </View>
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionTitle}>Mô tả sản phẩm</Text>
-          <Text style={styles.descriptionText}>{product.description}</Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={[styles.addToCartButton, product.stock <= 0 && styles.disabledButton]}
-        onPress={handleAddToCart}
-        disabled={product.stock <= 0}
-      >
-        <Icon name="shopping-cart" size={20} color="white" style={styles.cartIcon} />
-        <Text style={styles.addToCartText}>{product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
+
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F7FA',
   },
-  header: {
-    paddingTop: 15,
-    paddingHorizontal: 15,
-    backgroundColor: '#f8f8f8',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButtonText: {
-    marginLeft: 5,
-    fontSize: 16,
-    color: '#333',
+  scrollContainer: {
+    flex: 1,
   },
   imageContainer: {
-    backgroundColor: 'white',
-    padding: 15,
+    backgroundColor: '#FFFFFF',
+    width: '100%',
+    height: 320,
     alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
   },
   image: {
     width: '100%',
-    height: 300,
-    resizeMode: 'contain',
+    height: '100%',
   },
   detailsContainer: {
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -20,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+  },
+  nameContainer: {
+    marginBottom: 10,
   },
   name: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+    color: '#333333',
+    lineHeight: 28,
   },
-  priceStockContainer: {
+  priceContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   price: {
-    fontSize: 22,
-    color: '#e44d26',
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#6A5ACD',
   },
   stockContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  stockIcon: {
-    marginRight: 5,
+  inStockBadge: {
+    backgroundColor: '#4CAF50',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  outOfStockBadge: {
+    backgroundColor: '#FF6347',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   stockText: {
-    fontSize: 16,
-    color: '#777',
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  stockTextOut: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  quantityInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  quantityText: {
+    fontSize: 14,
+    color: '#666666',
+    marginLeft: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#EEEEEE',
+    marginVertical: 15,
   },
   descriptionContainer: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
-  descriptionTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
+    color: '#333333',
+    marginBottom: 10,
   },
   descriptionText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#555',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#555555',
   },
-  addToCartButton: {
-    backgroundColor: '#4B0082',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginHorizontal: 20,
+  deliveryInfoContainer: {
     marginBottom: 20,
+  },
+  deliveryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deliveryIcon: {
+    marginRight: 10,
+  },
+  deliveryText: {
+    fontSize: 14,
+    color: '#555555',
+  },
+  addToCartButtonInline: {
+    backgroundColor: '#6A5ACD',
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    elevation: 2,
   },
   addToCartText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: 5,
   },
   cartIcon: {
-    marginRight: 10,
+    marginRight: 5,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#D3D3D3',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 30,
+    backgroundColor: '#FFFFFF',
   },
   errorIcon: {
-    marginBottom: 20,
+    marginBottom: 15,
+  },
+  errorTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 10,
   },
   errorText: {
-    fontSize: 18,
-    color: '#dc3545',
+    fontSize: 16,
+    color: '#777777',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
+    lineHeight: 22,
   },
   retryButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#6A5ACD',
     paddingVertical: 12,
-    paddingHorizontal: 25,
+    paddingHorizontal: 30,
     borderRadius: 8,
+    elevation: 2,
   },
   retryButtonText: {
     color: 'white',
@@ -289,11 +397,41 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 16,
-    color: '#777',
+    color: '#666666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: '#FFFFFF',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#777777',
+    textAlign: 'center',
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  goBackButton: {
+    backgroundColor: '#6A5ACD',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  goBackButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  spacer: {
+    height: 40,
   },
 });
 

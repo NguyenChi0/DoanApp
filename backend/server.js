@@ -185,7 +185,7 @@ app.get('/products', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Lỗi server' });
     } else {
-      const baseImageUrl = 'http://192.168.52.114:3000';
+      const baseImageUrl = 'http://192.168.1.87:3000';
       const productsWithImageUrl = results.map(product => ({
         ...product,
         image: product.image
@@ -208,7 +208,7 @@ app.get('/products/:id', (req, res) => {
     } else if (result.length === 0) {
       res.status(404).json({ message: 'Không tìm thấy sản phẩm' });
     } else {
-      const baseImageUrl = 'http://192.168.52.114:3000';
+      const baseImageUrl = 'http://192.168.1.87:3000';
       const product = {
         ...result[0],
         image: result[0].image
@@ -297,7 +297,7 @@ app.put('/products/:id', authenticate, isAdmin, upload.single('image'), (req, re
         return res.status(500).json({ error: 'Lỗi server khi cập nhật sản phẩm' });
       }
       
-      const baseImageUrl = 'http://192.168.52.114:3000';
+      const baseImageUrl = 'http://192.168.1.87:3000';
       const updatedImage = image 
         ? `${baseImageUrl}/images/${image}` 
         : oldProduct.image 
@@ -437,7 +437,7 @@ app.get('/orders/:id', authenticate, (req, res) => {
     `;
     db.query(detailsQuery, [orderId], (err, itemsResult) => {
       if (err) return res.status(500).json({ error: 'Lỗi server khi lấy chi tiết đơn hàng' });
-      const baseImageUrl = 'http://192.168.52.114:3000';
+      const baseImageUrl = 'http://192.168.1.87:3000';
       const itemsWithImageUrl = itemsResult.map(item => ({
         ...item,
         product_image: item.product_image

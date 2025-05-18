@@ -28,14 +28,14 @@ const CartScreen: React.FC = () => {
     <View style={styles.cartItem}>
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemQuantity}>x{item.quantity}</Text>
-        <Text style={styles.itemPrice}>${item.price}</Text>
+        <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
+        <Text style={styles.itemPrice}>${(item.price * item.quantity).toFixed(2)}</Text>
       </View>
       <TouchableOpacity
         style={styles.removeButton}
         onPress={() => removeFromCart(item.id)}
       >
-        <Text style={styles.removeButtonText}>X</Text>
+        <Text style={styles.removeButtonText}>✕</Text>
       </TouchableOpacity>
     </View>
   );
@@ -49,13 +49,13 @@ const CartScreen: React.FC = () => {
         contentContainerStyle={styles.cartList}
       />
       <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Tổng cộng: ${total}</Text>
+        <Text style={styles.totalText}>Tổng cộng: ${total.toFixed(2)}</Text>
         <TouchableOpacity
           style={[styles.checkoutButton, cartItems.length === 0 && styles.checkoutButtonDisabled]}
           onPress={() => navigation.navigate('CheckoutScreen')}
           disabled={cartItems.length === 0}
         >
-          <Text style={styles.checkoutButtonText}>Thanh toán</Text>
+          <Text style={styles.checkoutButtonText}>Thanh Toán Ngay</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -65,85 +65,96 @@ const CartScreen: React.FC = () => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f4f4f4',
+    padding: 20,
+    backgroundColor: '#f8fafc',
   },
   cartList: {
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
   cartItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 12,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   itemInfo: {
     flex: 1,
+    gap: 4,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
   },
   itemQuantity: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
+    fontWeight: '500',
   },
   itemPrice: {
     fontSize: 16,
-    color: '#28a745',
-    fontWeight: 'bold',
+    color: '#16a34a',
+    fontWeight: '600',
   },
   removeButton: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 30,
-    height: 30,
-    backgroundColor: '#dc3545',
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ef4444',
   },
   removeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
   },
   totalContainer: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 12,
   },
   totalText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1f2937',
   },
   checkoutButton: {
     backgroundColor: '#4B0082',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4B0082',
   },
   checkoutButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   checkoutButtonDisabled: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#d1d5db',
+    borderColor: '#d1d5db',
   },
 });
 

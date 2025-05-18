@@ -8,6 +8,7 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -109,6 +110,24 @@ const OrderDetailScreen: React.FC = () => {
     );
   };
 
+  const handleReportOrder = () => {
+    const phoneNumber = '0945932004';
+    const url = `tel:${phoneNumber}`;
+    
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(url);
+        } else {
+          Alert.alert('Lỗi', 'Không thể thực hiện cuộc gọi trên thiết bị này.');
+        }
+      })
+      .catch((err) => {
+        console.error('Error opening phone dialer:', err);
+        Alert.alert('Lỗi', 'Không thể mở ứng dụng gọi điện.');
+      });
+  };
+
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
       year: 'numeric', 
@@ -177,19 +196,27 @@ const OrderDetailScreen: React.FC = () => {
         <Text style={styles.orderTotal}>Tổng tiền: ${formatPrice(order.total_price)}</Text>
       </View>
 
-      {order.status === 0 && (
+      <View style={styles.buttonContainer}>
+        {order.status === 0 && (
+          <TouchableOpacity 
+            style={[styles.cancelButton, cancelLoading && styles.disabledButton]} 
+            onPress={handleCancelOrder}
+            disabled={cancelLoading}
+          >
+            {cancelLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+            )}
+          </TouchableOpacity>
+        )}
         <TouchableOpacity 
-          style={[styles.cancelButton, cancelLoading && styles.disabledButton]} 
-          onPress={handleCancelOrder}
-          disabled={cancelLoading}
+          style={styles.reportButton}
+          onPress={handleReportOrder}
         >
-          {cancelLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
-          )}
+          <Text style={styles.reportButtonText}>Gặp vấn đề với đơn hàng? Liên hệ ngay</Text>
         </TouchableOpacity>
-      )}
+      </View>
 
       <Text style={styles.itemsHeader}>Sản phẩm trong đơn hàng:</Text>
       <FlatList
@@ -241,7 +268,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
-    shadowColor: '#000',
+    shadowColor: 'black',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -271,18 +298,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'green',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   cancelButton: {
     backgroundColor: '#e74c3c',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 16,
+    flex: 1,
+    marginRight: 8,
   },
   disabledButton: {
     backgroundColor: '#c0392b',
     opacity: 0.7,
   },
   cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  reportButton: {
+    backgroundColor: '#4B0082',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 8,
+  },
+  reportButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
