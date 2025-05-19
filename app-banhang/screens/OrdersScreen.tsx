@@ -172,7 +172,7 @@ const OrdersScreen: React.FC = () => {
     return (
       <View style={styles.centeredContainer}>
         <Ionicons name="cart-outline" size={80} color="#4B0082" />
-        <Text style={styles.errorText}>Vui lòng đăng nhập để xem đơn hàng</Text>
+        <Text style={styles.errorText}> Vui lòng đăng nhập để xem đơn hàng </Text>
         <TouchableOpacity 
           style={styles.loginButton} 
           onPress={() => navigation.navigate('Login')}
