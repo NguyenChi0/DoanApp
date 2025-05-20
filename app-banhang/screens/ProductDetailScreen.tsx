@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchProductById } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import ProductReviews from '../components/ProductReview'; // Import ProductReview component
 
 // Define the nested tab navigator param list
 type TabParamList = {
@@ -54,7 +55,7 @@ const ProductDetailScreen: React.FC = () => {
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);   
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -202,6 +203,11 @@ const ProductDetailScreen: React.FC = () => {
               {product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}
             </Text>
           </TouchableOpacity>
+          
+          <View style={styles.divider} />
+          
+          {/* Tích hợp component ProductReviews */}
+          <ProductReviews productId={product.id} />
           
           <View style={styles.spacer} />
         </View>

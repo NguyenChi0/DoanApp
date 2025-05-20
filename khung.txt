@@ -22,7 +22,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-app.use(cors());
+
+
+
+app.use(cors()); 
 app.use(bodyParser.json());
 app.use('/images', express.static(path.join(__dirname, 'images')));
 const db = mysql.createConnection({
@@ -41,39 +44,149 @@ db.connect(err => {
   }
 });
 
-// API xóa sản phẩm (chỉ admin)
-app.delete('/products/:id', authenticate, isAdmin, (req, res) => {
+// Authentication middleware
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+  jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Invalid token' });
+    req.userId = decoded.userId;
+    req.userRole = decoded.role;
+    next();
+  });
+};
+
+app.get('/products/:id/reviews', (req, res) => {
   const productId = req.params.id;
   
-  db.query('SELECT * FROM products WHERE id = ?', [productId], (err, result) => {
+  // Query to get reviews with user information
+  const query = `
+    SELECT r.id, r.rating, r.comment, r.created_at, 
+           u.id as user_id, u.username, u.full_name
+    FROM reviews r
+    JOIN users u ON r.user_id = u.id
+    WHERE r.product_id = ?
+    ORDER BY r.created_at DESC
+  `;
+  
+  db.query(query, [productId], (err, results) => {
     if (err) {
-      return res.status(500).json({ error: 'Lỗi server' });
-    }
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy sản phẩm' });
+      console.error('Error fetching reviews:', err);
+      return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải đánh giá' });
     }
     
-    db.query('DELETE FROM products WHERE id = ?', [productId], (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Lỗi server khi xóa sản phẩm' });
-      }
-      res.json({ message: 'Xóa sản phẩm thành công' });
-    });
+    res.json(results);
   });
 });
 
-// API xóa user (chỉ admin)
-app.delete('/users/:id', authenticate, isAdmin, (req, res) => {
-  const userId = req.params.id;
-  db.query('SELECT * FROM users WHERE id = ?', [userId], (err, results) => {
-    if (err) return res.status(500).json({ error: 'Lỗi server' });
-    if (results.length === 0) return res.status(404).json({ error: 'Không tìm thấy user' });
-    db.query('DELETE FROM users WHERE id = ?', [userId], (err, result) => {
-      if (err) return res.status(500).json({ error: 'Lỗi khi xóa user' });
-      res.json({ message: 'Xóa user thành công' });
-    });
-  });
+// Add a new review (requires authentication)
+app.post('/products/:id/reviews', authenticateToken, (req, res) => {
+  const productId = req.params.id;
+  const userId = req.user.id; // From the JWT token
+  const { rating, comment } = req.body;
+  
+  // Validate input
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: 'Đánh giá phải từ 1 đến 5 sao' });
+  }
+  
+  // Check if user has already reviewed this product
+  db.query(
+    'SELECT id FROM reviews WHERE user_id = ? AND product_id = ?',
+    [userId, productId],
+    (err, results) => {
+      if (err) {
+        console.error('Error checking existing review:', err);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+      }
+      
+      if (results.length > 0) {
+        // Update existing review
+        db.query(
+          'UPDATE reviews SET rating = ?, comment = ?, created_at = NOW() WHERE user_id = ? AND product_id = ?',
+          [rating, comment, userId, productId],
+          (err) => {
+            if (err) {
+              console.error('Error updating review:', err);
+              return res.status(500).json({ message: 'Không thể cập nhật đánh giá' });
+            }
+            res.json({ message: 'Đánh giá đã được cập nhật' });
+          }
+        );
+      } else {
+        // Create new review
+        db.query(
+          'INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)',
+          [userId, productId, rating, comment],
+          (err) => {
+            if (err) {
+              console.error('Error creating review:', err);
+              return res.status(500).json({ message: 'Không thể tạo đánh giá' });
+            }
+            res.status(201).json({ message: 'Đánh giá đã được tạo' });
+          }
+        );
+      }
+    }
+  );
 });
+
+// Delete a review (requires authentication)
+app.delete('/reviews/:id', authenticateToken, (req, res) => {
+  const reviewId = req.params.id;
+  const userId = req.user.id; // From the JWT token
+  
+  // Check if the review belongs to the user or user is admin
+  db.query(
+    'SELECT user_id FROM reviews WHERE id = ?',
+    [reviewId],
+    (err, results) => {
+      if (err) {
+        console.error('Error checking review ownership:', err);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+      }
+      
+      // Check if the user is the owner or admin
+      if (results[0].user_id !== userId && req.user.role !== 1) {
+        return res.status(403).json({ message: 'Không có quyền xóa đánh giá này' });
+      }
+      
+      // Delete the review
+      db.query('DELETE FROM reviews WHERE id = ?', [reviewId], (err) => {
+        if (err) {
+          console.error('Error deleting review:', err);
+          return res.status(500).json({ message: 'Không thể xóa đánh giá' });
+        }
+        
+        res.json({ message: 'Đánh giá đã được xóa' });
+      });
+    }
+  );
+});
+
+// Assuming you already have an authentication middleware function
+// If not, you need to implement this function
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: 'Không có token xác thực' });
+  }
+  
+  jwt.verify(token, 'your_jwt_secret_key', (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token không hợp lệ hoặc đã hết hạn' });
+    }
+    
+    req.user = user;
+    next();
+  });
+}
 
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);

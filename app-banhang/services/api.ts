@@ -135,3 +135,32 @@ export const getOrderStatusOptions = () => {
     { label: 'Đã huỷ', value: 3 },
   ];
 };
+
+// Define interfaces for review data
+export interface Review {
+  id: number;
+  user_id: number;
+  username: string;
+  full_name: string | null;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
+// Fetch reviews for a specific product
+export const fetchProductReviews = async (productId: number): Promise<Review[]> => {
+  const response = await axios.get(`${API_URL}/products/${productId}/reviews`);
+  return response.data;
+};
+
+// Submit a new review for a product (requires authentication)
+export const submitProductReview = async (productId: number, rating: number, comment: string) => {
+  const response = await authAxios.post(`/products/${productId}/reviews`, { rating, comment });
+  return response.data;
+};
+
+// Delete a review (requires authentication)
+export const deleteReview = async (reviewId: number) => {
+  const response = await authAxios.delete(`/reviews/${reviewId}`);
+  return response.data;
+};

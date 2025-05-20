@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CartProvider } from './contexts/CartContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import HomeScreen from './screens/HomeScreen';
+// Make sure the path matches the exact file name with correct casing
 import ProductDetailScreen from './screens/ProductDetailScreen';
 import CartScreen from './screens/CartScreen';
 import CheckoutScreen from './screens/CheckoutScreen';

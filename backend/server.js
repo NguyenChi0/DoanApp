@@ -701,6 +701,119 @@ app.delete('/users/:id', authenticate, isAdmin, (req, res) => {
   });
 });
 
+// Get reviews for a specific product
+app.get('/products/:id/reviews', (req, res) => {
+  const productId = req.params.id;
+  
+  // Query to get reviews with user information
+  const query = `
+    SELECT r.id, r.rating, r.comment, r.created_at, 
+           u.id as user_id, u.username, u.full_name
+    FROM reviews r
+    JOIN users u ON r.user_id = u.id
+    WHERE r.product_id = ?
+    ORDER BY r.created_at DESC
+  `;
+  
+  db.query(query, [productId], (err, results) => {
+    if (err) {
+      console.error('Error fetching reviews:', err);
+      return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải đánh giá' });
+    }
+    
+    res.json(results);
+  });
+});
+
+// Add a new review (requires authentication)
+app.post('/products/:id/reviews', authenticate, (req, res) => {
+  const productId = req.params.id;
+  const userId = req.userId; // From the JWT token
+  const { rating, comment } = req.body;
+  
+  // Validate input
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ message: 'Đánh giá phải từ 1 đến 5 sao' });
+  }
+  
+  // Check if user has already reviewed this product
+  db.query(
+    'SELECT id FROM reviews WHERE user_id = ? AND product_id = ?',
+    [userId, productId],
+    (err, results) => {
+      if (err) {
+        console.error('Error checking existing review:', err);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+      }
+      
+      if (results.length > 0) {
+        // Update existing review
+        db.query(
+          'UPDATE reviews SET rating = ?, comment = ?, created_at = NOW() WHERE user_id = ? AND product_id = ?',
+          [rating, comment, userId, productId],
+          (err) => {
+            if (err) {
+              console.error('Error updating review:', err);
+              return res.status(500).json({ message: 'Không thể cập nhật đánh giá' });
+            }
+            res.json({ message: 'Đánh giá đã được cập nhật' });
+          }
+        );
+      } else {
+        // Create new review
+        db.query(
+          'INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)',
+          [userId, productId, rating, comment],
+          (err) => {
+            if (err) {
+              console.error('Error creating review:', err);
+              return res.status(500).json({ message: 'Không thể tạo đánh giá' });
+            }
+            res.status(201).json({ message: 'Đánh giá đã được tạo' });
+          }
+        );
+      }
+    }
+  );
+});
+
+// Delete a review (requires authentication)
+app.delete('/reviews/:id', authenticate, (req, res) => {
+  const reviewId = req.params.id;
+  const userId = req.userId; // From the JWT token
+  
+  // Check if the review belongs to the user or user is admin
+  db.query(
+    'SELECT user_id FROM reviews WHERE id = ?',
+    [reviewId],
+    (err, results) => {
+      if (err) {
+        console.error('Error checking review ownership:', err);
+        return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'Không tìm thấy đánh giá' });
+      }
+      
+      // Check if the user is the owner or admin
+      if (results[0].user_id !== userId && req.userRole !== 1) {
+        return res.status(403).json({ message: 'Không có quyền xóa đánh giá này' });
+      }
+      
+      // Delete the review
+      db.query('DELETE FROM reviews WHERE id = ?', [reviewId], (err) => {
+        if (err) {
+          console.error('Error deleting review:', err);
+          return res.status(500).json({ message: 'Không thể xóa đánh giá' });
+        }
+        
+        res.json({ message: 'Đánh giá đã được xóa' });
+      });
+    }
+  );
+});
+
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);
 });
