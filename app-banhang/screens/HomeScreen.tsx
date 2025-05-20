@@ -8,10 +8,13 @@ import {
   Image,
   ScrollView,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchProducts } from '../services/api';
+
+const { width } = Dimensions.get('window');
 
 type RootStackParamList = {
   HomeScreen: undefined;
@@ -34,6 +37,14 @@ const HomeScreen: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentBannerIndex, setCurrentBannerIndex] = useState<number>(0);
+
+  // Array of banner images
+  const bannerImages = [
+    require('../images/image1.png'),
+    require('../images/image2.png'),
+    require('../images/image3.png'),
+  ];
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -74,10 +85,20 @@ const HomeScreen: React.FC = () => {
         navigation.navigate('ProductDetailScreen', { productId: item.id.toString() })
       }
     >
-      {item.image && <Image source={{ uri: item.image }} style={styles.productImage} />}
+      <View style={styles.imageContainer}>
+        {item.image && <Image source={{ uri: item.image }} style={styles.productImage} />}
+        <View style={styles.bannerContainer}>
+          <Text style={styles.bannerText}>Khuyến mãi lớn</Text>
+        </View>
+      </View>
       <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productPrice}>${item.price}</Text>
+        <Text style={styles.productName} numberOfLines={2} ellipsizeMode="tail">
+          {item.name}
+        </Text>
+        <View style={styles.priceContainer}>
+          <Text style={styles.productPrice}>${item.price}</Text>
+          <Text style={styles.originalPrice}>${(item.price * 1.2).toFixed(2)}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -95,6 +116,13 @@ const HomeScreen: React.FC = () => {
     </View>
   );
 
+  // Handle scroll event to update the current banner index
+  const handleScroll = (event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffsetX / width);
+    setCurrentBannerIndex(index);
+  };
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -104,6 +132,38 @@ const HomeScreen: React.FC = () => {
         onChangeText={(text) => setSearchQuery(text)}
       />
       <ScrollView>
+        {/* Banner Carousel */}
+        <View style={styles.mainBannerContainer}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+          >
+            {bannerImages.map((image, index) => (
+              <Image
+                key={index}
+                source={image}
+                style={styles.mainBannerImage}
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+          {/* Dot Indicators */}
+          <View style={styles.dotContainer}>
+            {bannerImages.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  currentBannerIndex === index ? styles.activeDot : styles.inactiveDot,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
         {Object.entries(groupedProducts).map(([category, items]) =>
           renderCategorySection(category, items)
         )}
@@ -124,23 +184,104 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4B0082',
   },
+  mainBannerContainer: {
+    width: width,
+    height: 180,
+    marginBottom: 15,
+    overflow: 'hidden',
+    position: 'relative', // For positioning the dots
+  },
+  mainBannerImage: {
+    width: width,
+    height: '100%',
+  },
+  dotContainer: {
+    position: 'absolute',
+    bottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: '#FF4500',
+  },
+  inactiveDot: {
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
   categorySection: { marginBottom: 25 },
   categoryHeader: { fontSize: 24, fontWeight: 'bold', margin: 15, color: '#4B0082' },
   productItem: {
     backgroundColor: '#FFFFFF',
     borderRadius: 15,
     marginHorizontal: 10,
-    padding: 12,
-    width: 170,
+    padding: 15,
+    width: 200,
     alignItems: 'center',
     elevation: 5,
     borderColor: '#ff00ff',
     borderWidth: 2,
+    overflow: 'hidden',
   },
-  productImage: { width: 150, height: 120, borderRadius: 15 },
-  productInfo: { marginTop: 10, alignItems: 'center' },
-  productName: { fontSize: 16, fontWeight: '600', textAlign: 'center', color: '#333' },
-  productPrice: { fontSize: 16, color: '#FF4500', marginTop: 5, fontWeight: 'bold' },
+  imageContainer: {
+    position: 'relative',
+    width: 170,
+    height: 140,
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+  },
+  bannerContainer: {
+    position: 'absolute',
+    top: 10,
+    left: -45,
+    backgroundColor: '#FF4500',
+    paddingVertical: 5,
+    paddingHorizontal: 30,
+    transform: [{ rotate: '-45deg' }],
+    elevation: 5,
+  },
+  bannerText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  productInfo: { marginTop: 12, alignItems: 'center', width: '100%' },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#333',
+    width: '100%',
+    paddingHorizontal: 5,
+  },
+  priceContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginTop: 8,
+    justifyContent: 'center',
+  },
+  productPrice: {
+    fontSize: 18,
+    color: '#FF4500',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: '#888',
+    textDecorationLine: 'line-through',
+    marginBottom: 4,
+  },
 });
 
 export default HomeScreen;
