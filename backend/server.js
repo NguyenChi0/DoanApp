@@ -725,56 +725,75 @@ app.get('/products/:id/reviews', (req, res) => {
   });
 });
 
-// Add a new review (requires authentication)
 app.post('/products/:id/reviews', authenticate, (req, res) => {
   const productId = req.params.id;
-  const userId = req.userId; // From the JWT token
+  const userId = req.userId; // Lấy từ JWT token
   const { rating, comment } = req.body;
-  
-  // Validate input
+
+  // Kiểm tra đầu vào
   if (!rating || rating < 1 || rating > 5) {
     return res.status(400).json({ message: 'Đánh giá phải từ 1 đến 5 sao' });
   }
-  
-  // Check if user has already reviewed this product
-  db.query(
-    'SELECT id FROM reviews WHERE user_id = ? AND product_id = ?',
-    [userId, productId],
-    (err, results) => {
-      if (err) {
-        console.error('Error checking existing review:', err);
-        return res.status(500).json({ message: 'Đã xảy ra lỗi' });
-      }
-      
-      if (results.length > 0) {
-        // Update existing review
-        db.query(
-          'UPDATE reviews SET rating = ?, comment = ?, created_at = NOW() WHERE user_id = ? AND product_id = ?',
-          [rating, comment, userId, productId],
-          (err) => {
-            if (err) {
-              console.error('Error updating review:', err);
-              return res.status(500).json({ message: 'Không thể cập nhật đánh giá' });
-            }
-            res.json({ message: 'Đánh giá đã được cập nhật' });
-          }
-        );
-      } else {
-        // Create new review
-        db.query(
-          'INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)',
-          [userId, productId, rating, comment],
-          (err) => {
-            if (err) {
-              console.error('Error creating review:', err);
-              return res.status(500).json({ message: 'Không thể tạo đánh giá' });
-            }
-            res.status(201).json({ message: 'Đánh giá đã được tạo' });
-          }
-        );
-      }
+
+  // Kiểm tra xem người dùng có đơn hàng đã giao cho sản phẩm này không
+  const checkOrderQuery = `
+    SELECT o.id
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 2
+    LIMIT 1
+  `;
+
+  db.query(checkOrderQuery, [userId, productId], (err, results) => {
+    if (err) {
+      console.error('Lỗi khi kiểm tra đơn hàng:', err);
+      return res.status(500).json({ message: 'Đã xảy ra lỗi khi kiểm tra đơn hàng' });
     }
-  );
+
+    if (results.length === 0) {
+      return res.status(403).json({ message: 'Bạn chỉ có thể đánh giá sản phẩm sau khi đơn hàng đã được giao' });
+    }
+
+    // Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
+    db.query(
+      'SELECT id FROM reviews WHERE user_id = ? AND product_id = ?',
+      [userId, productId],
+      (err, results) => {
+        if (err) {
+          console.error('Lỗi khi kiểm tra đánh giá:', err);
+          return res.status(500).json({ message: 'Đã xảy ra lỗi' });
+        }
+
+        if (results.length > 0) {
+          // Cập nhật đánh giá hiện có
+          db.query(
+            'UPDATE reviews SET rating = ?, comment = ?, created_at = NOW() WHERE user_id = ? AND product_id = ?',
+            [rating, comment, userId, productId],
+            (err) => {
+              if (err) {
+                console.error('Lỗi khi cập nhật đánh giá:', err);
+                return res.status(500).json({ message: 'Không thể cập nhật đánh giá' });
+              }
+              res.json({ message: 'Đánh giá đã được cập nhật' });
+            }
+          );
+        } else {
+          // Tạo đánh giá mới
+          db.query(
+            'INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)',
+            [userId, productId, rating, comment],
+            (err) => {
+              if (err) {
+                console.error('Lỗi khi tạo đánh giá:', err);
+                return res.status(500).json({ message: 'Không thể tạo đánh giá' });
+              }
+              res.status(201).json({ message: 'Đánh giá đã được tạo' });
+            }
+          );
+        }
+      }
+    );
+  });
 });
 
 // Delete a review (requires authentication)

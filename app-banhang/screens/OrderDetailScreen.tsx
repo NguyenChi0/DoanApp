@@ -9,22 +9,22 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fetchOrderDetails, cancelOrder, getOrderStatusText } from '../services/api';
 
-// Define the navigation param list
 type RootStackParamList = {
   OrdersScreen: undefined;
   OrderDetailScreen: { orderId: string };
+  ReviewScreen: { productId: number };
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDetailScreen'>;
 type RouteProps = RouteProp<RootStackParamList, 'OrderDetailScreen'>;
 
-// Define the Order and OrderItem types based on backend response
 interface Order {
   id: number;
   user_name: string;
@@ -77,15 +77,11 @@ const OrderDetailScreen: React.FC = () => {
   const handleCancelOrder = async () => {
     if (!order) return;
 
-    // Show confirmation dialog before cancelling
     Alert.alert(
       'Xác nhận hủy đơn hàng',
       'Bạn có chắc chắn muốn hủy đơn hàng này không?',
       [
-        {
-          text: 'Không',
-          style: 'cancel'
-        },
+        { text: 'Không', style: 'cancel' },
         {
           text: 'Xác Nhận',
           style: 'destructive',
@@ -94,13 +90,12 @@ const OrderDetailScreen: React.FC = () => {
             try {
               const response = await cancelOrder(order.id);
               Alert.alert('Thành công', response.message);
-              // Refresh order details after cancellation
               const updatedData = await fetchOrderDetails(Number(orderId));
               setOrder(updatedData.order);
               setItems(updatedData.items);
             } catch (err: any) {
               console.error('Error cancelling order:', err);
-              Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng. Vui lòng thử lại.');
+              Alert.alert('Lỗi', err.response?.data?.message || 'Không thể hủy đơn hàng.');
             } finally {
               setCancelLoading(false);
             }
@@ -116,16 +111,17 @@ const OrderDetailScreen: React.FC = () => {
     
     Linking.canOpenURL(url)
       .then((supported) => {
-        if (supported) {
-          return Linking.openURL(url);
-        } else {
-          Alert.alert('Lỗi', 'Không thể thực hiện cuộc gọi trên thiết bị này.');
-        }
+        if (supported) return Linking.openURL(url);
+        Alert.alert('Lỗi', 'Không thể thực hiện cuộc gọi trên thiết bị này.');
       })
       .catch((err) => {
         console.error('Error opening phone dialer:', err);
         Alert.alert('Lỗi', 'Không thể mở ứng dụng gọi điện.');
       });
+  };
+
+  const handleReviewProduct = (productId: number) => {
+    navigation.navigate('ReviewScreen', { productId });
   };
 
   const formatDate = (dateString: string) => {
@@ -145,25 +141,53 @@ const OrderDetailScreen: React.FC = () => {
     return isNaN(numericPrice) ? '0.00' : numericPrice.toFixed(2);
   };
 
-  const renderItem = ({ item }: { item: OrderItem }) => (
-    <View style={styles.itemContainer}>
-      {item.product_image ? (
-        <Image source={{ uri: item.product_image }} style={styles.itemImage} />
-      ) : (
-        <View style={styles.placeholderImage}>
-          <Text style={styles.placeholderText}>No Image</Text>
+  const renderItem = ({ item }: { item: OrderItem }) => {
+    if (!order) return null;
+    
+    return order.status === 2 ? (
+      <Pressable
+        onPress={() => handleReviewProduct(item.product_id)}
+        style={[styles.itemContainer, styles.reviewableItem]}
+      >
+        {item.product_image ? (
+          <Image source={{ uri: item.product_image }} style={styles.itemImage} />
+        ) : (
+          <View style={styles.placeholderImage}>
+            <Text style={styles.placeholderText}>No Image</Text>
+          </View>
+        )}
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName}>{item.product_name}</Text>
+          <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
+          <Text style={styles.itemPrice}>Đơn giá: ${formatPrice(item.price)}</Text>
+          <Text style={styles.itemTotal}>
+            Tổng: ${(Number(item.quantity) * Number(formatPrice(item.price))).toFixed(2)}
+          </Text>
+          <View style={styles.reviewPrompt}>
+            <Text style={styles.reviewPromptText}>👆 Nhấn để đánh giá sản phẩm</Text>
+          </View>
         </View>
-      )}
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.product_name}</Text>
-        <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
-        <Text style={styles.itemPrice}>Đơn giá: ${formatPrice(item.price)}</Text>
-        <Text style={styles.itemTotal}>
-          Tổng: ${(Number(item.quantity) * Number(formatPrice(item.price))).toFixed(2)}
-        </Text>
+      </Pressable>
+    ) : (
+      <View style={styles.itemContainer}>
+        {item.product_image ? (
+          <Image source={{ uri: item.product_image }} style={styles.itemImage} />
+        ) : (
+          <View style={styles.placeholderImage}>
+            <Text style={styles.placeholderText}>No Image</Text>
+          </View>
+        )}
+        <View style={styles.itemDetails}>
+          <Text style={styles.itemName}>{item.product_name}</Text>
+          <Text style={styles.itemQuantity}>Số lượng: {item.quantity}</Text>
+          <Text style={styles.itemPrice}>Đơn giá: ${formatPrice(item.price)}</Text>
+          <Text style={styles.itemTotal}>
+            Tổng: ${(Number(item.quantity) * Number(formatPrice(item.price))).toFixed(2)}
+          </Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -218,7 +242,12 @@ const OrderDetailScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.itemsHeader}>Sản phẩm trong đơn hàng:</Text>
+      <Text style={styles.itemsHeader}>
+        Sản phẩm trong đơn hàng:
+        {order.status === 2 && (
+          <Text style={styles.reviewHint}> (Nhấn vào sản phẩm để đánh giá)</Text>
+        )}
+      </Text>
       <FlatList
         data={items}
         renderItem={renderItem}
@@ -338,6 +367,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
+  reviewHint: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    color: '#4B0082',
+    fontStyle: 'italic',
+  },
   itemsList: {
     flex: 1,
   },
@@ -352,6 +387,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  reviewableItem: {
+    borderWidth: 2,
+    borderColor: '#4B0082',
+    borderStyle: 'dashed',
   },
   itemImage: {
     width: 80,
@@ -394,6 +434,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: 'green',
+  },
+  reviewPrompt: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  reviewPromptText: {
+    fontSize: 12,
+    color: '#4B0082',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   errorText: {
     color: 'red',

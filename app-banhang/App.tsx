@@ -11,6 +11,7 @@ import CartScreen from './screens/CartScreen';
 import CheckoutScreen from './screens/CheckoutScreen';
 import OrdersScreen from './screens/OrdersScreen';
 import OrderDetailScreen from './screens/OrderDetailScreen';
+import ReviewScreen from './screens/ReviewScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import AccountScreen from './screens/AccountScreen';
@@ -23,12 +24,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Định nghĩa kiểu cho navigation
+// Định nghĩa kiểu cho navigation - Thêm ReviewScreen vào RootStackParamList
 type RootStackParamList = {
   Tabs: undefined;
   ProductDetailScreen: { productId: string };
   CheckoutScreen: undefined;
   OrderDetailScreen: { orderId: string };
+  ReviewScreen: { productId: number }; // Thêm ReviewScreen với param productId
   Login: undefined;
   Register: undefined;
   Account: undefined;
@@ -185,6 +187,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} options={{ title: 'Chi tiết sản phẩm' }} />
       <Stack.Screen name="CheckoutScreen" component={CheckoutScreen} options={{ title: 'Thanh toán' }} />
       <Stack.Screen name="OrderDetailScreen" component={OrderDetailScreen} options={{ title: 'Chi tiết đơn hàng' }} />
+      <Stack.Screen name="ReviewScreen" component={ReviewScreen} options={{ title: 'Đánh giá sản phẩm' }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Đăng Nhập' }} />
       <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Đăng Ký' }} />
       <Stack.Screen name="Account" component={AccountScreen} options={{ title: 'Tài khoản' }} />
