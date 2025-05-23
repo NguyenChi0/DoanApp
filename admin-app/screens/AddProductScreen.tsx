@@ -141,13 +141,14 @@ const AddProductScreen = ({ navigation }: Props) => {
       </TouchableOpacity>
 
       {image && <Image source={{ uri: image }} style={styles.previewImage} />}
-
+      <Text style={styles.mota}>Tên sản phẩm</Text>
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
         placeholder="Tên sản phẩm"
       />
+      <Text style={styles.mota}>Mô tả sản phẩm</Text>
       <TextInput
         style={styles.input}
         value={description}
@@ -155,6 +156,7 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Mô tả"
         multiline
       />
+      <Text style={styles.mota}>Giá</Text>
       <TextInput
         style={styles.input}
         value={price}
@@ -162,6 +164,7 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Giá"
         keyboardType="numeric"
       />
+      <Text style={styles.mota}>Số lượng</Text>
       <TextInput
         style={styles.input}
         value={stock}
@@ -169,6 +172,7 @@ const AddProductScreen = ({ navigation }: Props) => {
         placeholder="Số lượng tồn kho"
         keyboardType="numeric"
       />
+      <Text style={styles.mota}>Danh mục</Text>
       <View style={styles.pickerContainer}>
         <Picker
           selectedValue={categoryId}
@@ -194,9 +198,9 @@ const AddProductScreen = ({ navigation }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor:'#E3F2FD' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign:'center'},
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -209,10 +213,10 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: '#007AFF',
     padding: 12,
-    borderRadius: 4,
+    borderRadius: 30,
     alignItems: 'center',
   },
-  addButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  addButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold'},
   imagePicker: {
     backgroundColor: '#ddd',
     padding: 10,
@@ -222,6 +226,7 @@ const styles = StyleSheet.create({
   },
   imagePickerText: { color: '#333', fontSize: 16 },
   previewImage: { width: 200, height: 200, alignSelf: 'center', marginBottom: 10 },
+  mota: {color:'#2162d4', fontSize:18,margin:5,fontWeight:'bold'}
 });
 
 export default AddProductScreen;

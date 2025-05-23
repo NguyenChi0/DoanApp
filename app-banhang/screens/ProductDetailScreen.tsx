@@ -181,7 +181,7 @@ const ProductDetailScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Thông tin vận chuyển</Text>
             <View style={styles.deliveryItem}>
               <Icon name="truck" size={16} color="#6A5ACD" style={styles.deliveryIcon} />
-              <Text style={styles.deliveryText}>Giao hàng nhanh trong 24h</Text>
+              <Text style={styles.deliveryText}>Giao hỏa tốc nội thành trong 3h</Text>
             </View>
             <View style={styles.deliveryItem}>
               <Icon name="refresh" size={16} color="#6A5ACD" style={styles.deliveryIcon} />

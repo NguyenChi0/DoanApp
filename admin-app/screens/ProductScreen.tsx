@@ -16,7 +16,7 @@ import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList, TabParamList } from '../App';
 import { fetchProducts, hideProduct, logout, fetchCategories } from '../api';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { Picker } from '@react-native-picker/picker';
 
 type ProductScreenNavigationProp = CompositeNavigationProp<
@@ -128,20 +128,20 @@ const ProductScreen = ({ navigation }: Props) => {
 
   const handleHide = async (id: number, name: string) => {
     Alert.alert(
-      'Xác nhận ẩn',
-      `Bạn có chắc chắn muốn ẩn sản phẩm "${name}"?`,
+      'Xác nhận XÓA?',
+      `Bạn có chắc chắn muốn XÓA sản phẩm "${name}"?`,
       [
         { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Ẩn',
+          text: 'XÓA',
           style: 'destructive',
           onPress: async () => {
             try {
               await hideProduct(id);
-              Alert.alert('Thành công', 'Đã ẩn sản phẩm');
+              Alert.alert('Thành công', 'Đã XÓA sản phẩm');
               loadData();
             } catch (error: any) {
-              Alert.alert('Lỗi', error.message || 'Không thể ẩn sản phẩm');
+              Alert.alert('Lỗi', error.message || 'Không thể XÓA sản phẩm');
             }
           },
         },
@@ -153,23 +153,62 @@ const ProductScreen = ({ navigation }: Props) => {
     loadData();
   }, []);
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#0000ff" />
+  const renderProduct = ({ item }: { item: Product }) => (
+    <View style={styles.productContainer}>
+      <View style={styles.productHeader}>
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.price}>{item.price.toLocaleString('vi-VN')}₫</Text>
       </View>
-    );
-  }
+      <View style={styles.infoRow}>
+        <Icon name="info-circle" size={18} color="#666" style={styles.icon} />
+        <Text style={styles.description} numberOfLines={2}>
+          {item.description || 'Không có mô tả'}
+        </Text>
+      </View>
+      <View style={styles.infoRow}>
+        <Icon name="cubes" size={18} color="#666" style={styles.icon} />
+        <Text style={styles.stock}>Còn lại: {item.stock} sản phẩm</Text>
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('ProductEdit', { product: item })}
+          activeOpacity={0.7}
+        >
+          <Icon name="edit" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Sửa</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleHide(item.id, item.name)}
+          activeOpacity={0.7}
+        >
+          <Icon name="trash" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Xóa</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="shopping-cart" size={50} color="#999" />
+      <Text style={styles.emptyText}>
+        {searchQuery.length > 0 || selectedCategory !== 0
+          ? 'Không tìm thấy sản phẩm phù hợp'
+          : 'Không có sản phẩm nào'}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.titleContainer}>
-        <Text style={styles.title as StyleProp<TextStyle>}>Danh sách sản phẩm ({filteredProducts.length})</Text>
-        <TouchableOpacity 
-          style={styles.headerLogoutButton} 
-          onPress={handleLogout}
-        >
-          <Icon name="logout" size={20} color="#fff" />
+        <Text style={styles.header}>
+          Quản lý Sản phẩm
+        </Text>
+        <TouchableOpacity style={styles.headerLogoutButton} onPress={handleLogout}>
+          <Icon name="sign-out" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -203,54 +242,29 @@ const ProductScreen = ({ navigation }: Props) => {
         </Picker>
       </View>
 
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <View style={styles.productInfo}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.price}>{item.price.toLocaleString('vi-VN')}₫</Text>
-              <Text style={styles.description} numberOfLines={2}>
-                {item.description || 'Không có mô tả'}
-              </Text>
-              <Text style={styles.stock}>Còn lại: {item.stock} sản phẩm</Text>
-            </View>
-
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={[styles.iconButton, styles.editButton]}
-                onPress={() => navigation.navigate('ProductEdit', { product: item })}
-              >
-                <Icon name="edit" size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.iconButton, styles.deleteButton]}
-                onPress={() => handleHide(item.id, item.name)}
-              >
-                <Icon name="visibility-off" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        refreshing={isRefreshing}
-        onRefresh={() => loadData(true)}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {searchQuery.length > 0 || selectedCategory !== 0
-                ? 'Không tìm thấy sản phẩm phù hợp'
-                : 'Không có sản phẩm nào'}
-            </Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      ) : filteredProducts.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <FlatList
+          data={filteredProducts}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          refreshing={isRefreshing}
+          onRefresh={() => loadData(true)}
+        />
+      )}
 
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('AddProduct')}
       >
-        <Icon name="add" size={24} color="#fff" />
+        <Icon name="plus" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -259,38 +273,44 @@ const ProductScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    width: '100%',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#E3F2FD',
   },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E88E5',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    flex: 1,
+  },
+  headerLogoutButton: {
+    backgroundColor: '#F44336',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
   },
   searchContainer: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 16,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    paddingHorizontal: 15,
     alignItems: 'center',
+    marginBottom: 15,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    width: '100%',
+    shadowRadius: 4,
   },
   searchInput: {
     flex: 1,
@@ -308,105 +328,134 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 16,
+    borderRadius: 12,
+    marginBottom: 15,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
   },
   picker: {
     height: 50,
     width: '100%',
   },
-  item: {
-    padding: 16,
+  productContainer: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 16,
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 12,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  productHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  productInfo: {
-    flex: 1,
-  },
-  name: {
+  productName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '600',
     color: '#333',
+    flex: 1,
   },
   price: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#e53935',
+    fontWeight: '500',
+    color: '#FFD700',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  icon: {
+    marginRight: 8,
   },
   description: {
+    fontSize: 14,
     color: '#666',
-    marginBottom: 8,
+    lineHeight: 20,
   },
   stock: {
-    color: '#666',
     fontSize: 14,
+    color: '#666',
   },
-  actions: {
+  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
   },
   editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#2196F3',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    elevation: 2,
+    marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F44336',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    elevation: 2,
   },
-  emptyContainer: {
-    padding: 20,
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyText: {
+  loadingText: {
+    marginTop: 10,
     fontSize: 16,
     color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 10,
     textAlign: 'center',
+  },
+  list: {
+    paddingBottom: 20,
   },
   fab: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    bottom: 20,
+    right: 20,
     backgroundColor: '#4CAF50',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5,
-  },
-  headerLogoutButton: {
-    backgroundColor: '#f44336',
-    width: 50,
-    height: 50,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
 

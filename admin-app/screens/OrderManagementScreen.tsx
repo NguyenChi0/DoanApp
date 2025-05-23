@@ -5,6 +5,7 @@ import { RootStackParamList } from '../App';
 import { fetchOrders, getOrderStatusText, getOrderStatusOptions } from '../api';
 import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 type OrderManagementScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderManagement'>;
 
@@ -51,10 +52,8 @@ const OrderManagementScreen = ({ navigation }: Props) => {
 
   const filterOrders = (ordersData: Order[], status: number) => {
     if (status === -1) {
-      // Show all orders
       setFilteredOrders(ordersData);
     } else {
-      // Filter by selected status
       setFilteredOrders(ordersData.filter(order => order.status === status));
     }
   };
@@ -84,9 +83,42 @@ const OrderManagementScreen = ({ navigation }: Props) => {
     }
   };
 
+  const getStatusIcon = (status: number) => {
+    switch (status) {
+      case 0:
+        return 'hourglass-empty';
+      case 1:
+        return 'local-shipping';
+      case 2:
+        return 'check-circle';
+      case 3:
+        return 'cancel';
+      default:
+        return 'info';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="shopping-cart" size={50} color="#999" />
+      <Text style={styles.emptyText}>Không có đơn hàng nào</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Quản lý đơn hàng</Text>
+      <Text style={styles.header}>Quản lý Đơn hàng</Text>
       
       <View style={styles.filterContainer}>
         <Text style={styles.filterLabel}>Lọc theo trạng thái:</Text>
@@ -104,27 +136,42 @@ const OrderManagementScreen = ({ navigation }: Props) => {
       </View>
       
       {isLoading && !refreshing ? (
-        <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredOrders}
           keyExtractor={(item) => item.id.toString()}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#2196F3']}
+              tintColor="#2196F3"
+            />
           }
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Không có đơn hàng nào</Text>
-          }
+          ListEmptyComponent={renderEmptyState}
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.orderItem}
               onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+              activeOpacity={0.7}
             >
               <View style={styles.orderHeader}>
                 <Text style={styles.orderId}>Đơn hàng #{item.id}</Text>
-                <Text style={[styles.orderStatus, getStatusStyle(item.status)]}>
-                  {getOrderStatusText(item.status)}
-                </Text>
+                <View style={[styles.orderStatus, getStatusStyle(item.status)]}>
+                  <Icon
+                    name={getStatusIcon(item.status)}
+                    size={16}
+                    color="#fff"
+                    style={styles.statusIcon}
+                  />
+                  <Text style={styles.orderStatusText}>
+                    {getOrderStatusText(item.status)}
+                  </Text>
+                </View>
               </View>
               <View style={styles.orderInfo}>
                 <Text style={styles.customerName}>{item.user_name}</Text>
@@ -133,9 +180,13 @@ const OrderManagementScreen = ({ navigation }: Props) => {
                 <Text style={styles.orderPrice}>
                   Tổng tiền: {item.total_price.toLocaleString('vi-VN')}₫
                 </Text>
+                <Text style={styles.orderDate}>
+                  Ngày đặt: {formatDate(item.created_at)}
+                </Text>
               </View>
             </TouchableOpacity>
           )}
+          contentContainerStyle={styles.list}
         />
       )}
     </View>
@@ -145,59 +196,105 @@ const OrderManagementScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: 20,
+    backgroundColor: '#E3F2FD',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E88E5',
+    textAlign: 'center',
+    marginBottom: 20,
+    textTransform: 'uppercase',
   },
   filterContainer: {
-    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
   },
   filterLabel: {
     fontSize: 16,
-    marginRight: 10,
+    fontWeight: '600',
+    color: '#1E88E5',
     flex: 0.4,
   },
   pickerContainer: {
     flex: 0.6,
+    backgroundColor: '#fff',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    overflow: 'hidden',
+    borderColor: '#E0E0E0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   picker: {
     height: 40,
+    color: '#333',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 10,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   orderItem: {
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-    marginBottom: 12,
-    borderRadius: 8,
-    borderLeftWidth: 5,
+    padding: 15,
+    backgroundColor: '#fff',
+    marginBottom: 15,
+    borderRadius: 12,
+    borderLeftWidth: 4,
     borderLeftColor: '#2196F3',
-    elevation: 2,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   orderId: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
   orderStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusIcon: {
+    marginRight: 6,
+  },
+  orderStatusText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    fontWeight: '600',
+    color: '#fff',
   },
   orderInfo: {
     marginTop: 4,
@@ -205,38 +302,39 @@ const styles = StyleSheet.create({
   customerName: {
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 4,
+    color: '#333',
+    marginBottom: 6,
   },
   orderDetail: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 2,
+    marginBottom: 6,
   },
   orderPrice: {
     fontSize: 15,
     fontWeight: '500',
-    marginTop: 4,
+    color: '#2196F3',
+    marginBottom: 6,
   },
-  loader: {
-    marginTop: 20,
+  orderDate: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
   },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-    marginTop: 40,
+  list: {
+    paddingBottom: 20,
   },
   statusPending: {
-    color: '#FF9800',
+    backgroundColor: '#FF9800',
   },
   statusShipping: {
-    color: '#2196F3',
+    backgroundColor: '#2196F3',
   },
   statusDelivered: {
-    color: '#4CAF50',
+    backgroundColor: '#4CAF50',
   },
   statusCancelled: {
-    color: '#F44336',
+    backgroundColor: '#F44336',
   },
 });
 

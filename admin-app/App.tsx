@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native'; // Add StyleSheet import
+import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,6 +14,7 @@ import OrderManagementScreen from './screens/OrderManagementScreen';
 import OrderDetailScreen from './screens/OrderDetailScreen';
 import RevenueReportScreen from './screens/RevenueReportScreen';
 import UserManagementScreen from './screens/UserManagementScreen';
+import ReviewManagementScreen from './screens/ReviewManagementScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   OrderManagement: undefined;
   RevenueReport: undefined;
   UserManagement: undefined;
+  ReviewManagement: undefined;
 };
 
 export type TabParamList = {
@@ -32,6 +34,7 @@ export type TabParamList = {
   OrderManagement: undefined;
   RevenueReport: undefined;
   UserManagement: undefined;
+  ReviewManagement: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -98,6 +101,15 @@ function MainTabs() {
           headerShown: false,
         }} 
       />
+      <Tab.Screen 
+        name="ReviewManagement" 
+        component={ReviewManagementScreen} 
+        options={{ 
+          title: 'Đánh giá', 
+          tabBarIcon: ({ color, size }) => <Icon name="star" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
     </Tab.Navigator>
   );
 }
@@ -105,7 +117,7 @@ function MainTabs() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 15, // Add 10px top padding
+    paddingTop: 15,
   },
 });
 
@@ -172,6 +184,13 @@ export default function App(): React.ReactElement {
             component={UserManagementScreen} 
             options={{
               title: 'Quản lý user',
+            }}
+          />
+          <Stack.Screen 
+            name="ReviewManagement" 
+            component={ReviewManagementScreen} 
+            options={{
+              title: 'Quản lý đánh giá',
             }}
           />
         </Stack.Navigator>

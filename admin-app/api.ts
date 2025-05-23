@@ -16,7 +16,7 @@ export const clearToken = async () => {
 
 export const isAuthenticated = async () => {
   const token = await getToken();
-  return !!token; // Simplified check; adjust based on your backend logic
+  return !!token;
 };
 
 export const loginAdmin = async (username: string, password: string) => {
@@ -46,6 +46,7 @@ export const loginAdmin = async (username: string, password: string) => {
   }
 };
 
+//Quản lý sản phẩm
 export const fetchProducts = async () => {
   try {
     const token = await getToken();
@@ -72,7 +73,7 @@ export const addProduct = async (product: {
   name: string;
   price: number;
   description?: string;
-  category_id?: number | string; // Allow string for compatibility with Picker
+  category_id?: number | string;
   stock?: number;
   image?: string;
 }) => {
@@ -88,14 +89,13 @@ export const addProduct = async (product: {
     formData.append('price', product.price.toString());
     if (product.stock) formData.append('stock', product.stock.toString());
     if (product.category_id) {
-      // Convert string to number if necessary
       const categoryId = typeof product.category_id === 'string' ? parseInt(product.category_id) : product.category_id;
       formData.append('category_id', categoryId.toString());
     }
     if (product.image) {
       const filename = product.image.split('/').pop() || 'image.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : `image/jpeg`; // Default to jpeg if type is unclear
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
       formData.append('image', {
         uri: product.image,
         name: filename,
@@ -148,16 +148,14 @@ export const updateProduct = async (
     formData.append('price', product.price.toString());
     if (product.stock !== undefined) formData.append('stock', product.stock.toString());
     if (product.category_id) {
-      // Convert string to number if necessary
       const categoryId = typeof product.category_id === 'string' ? parseInt(product.category_id) : product.category_id;
       formData.append('category_id', categoryId.toString());
     }
     
-    // Only append image if new image was selected
     if (newImageSelected && product.image) {
       const filename = product.image.split('/').pop() || 'image.jpg';
       const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : `image/jpeg`; // Default to jpeg if type is unclear
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
       
       formData.append('image', {
         uri: product.image,
@@ -187,12 +185,11 @@ export const updateProduct = async (
   }
 };
 
-// Cập nhật hàm deleteProduct thành hideProduct (ẩn sản phẩm)
 export const hideProduct = async (id: number) => {
   try {
     const token = await getToken();
     const res = await fetch(`${BASE_URL}/products/${id}`, {
-      method: 'DELETE', // Vẫn giữ method DELETE để không phải thay đổi phía client
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -211,6 +208,8 @@ export const hideProduct = async (id: number) => {
   }
 };
 
+
+//Quản lý danh mục
 export const fetchCategories = async () => {
   try {
     const token = await getToken();
@@ -306,6 +305,7 @@ export const deleteCategory = async (id: number) => {
   }
 };
 
+//Quản lý đơn hàng
 export const fetchOrders = async () => {
   try {
     const token = await getToken();
@@ -375,7 +375,31 @@ export const updateOrderStatus = async (orderId: number, status: number) => {
   }
 };
 
-// API quản lý user
+export const getOrderStatusText = (status: number): string => {
+  switch (status) {
+    case 0:
+      return 'Chờ xác nhận';
+    case 1:
+      return 'Đang vận chuyển';
+    case 2:
+      return 'Đã giao hàng';
+    case 3:
+      return 'Đã huỷ';
+    default:
+      return 'Không xác định';
+  }
+};
+
+export const getOrderStatusOptions = (): Array<{label: string, value: number}> => {
+  return [
+    { label: 'Tất cả', value: -1 },
+    { label: 'Chờ xác nhận', value: 0 },
+    { label: 'Đang vận chuyển', value: 1 },
+    { label: 'Đã giao hàng', value: 2 },
+    { label: 'Đã huỷ', value: 3 }
+  ];
+};
+//Quản lý người dùng
 export const fetchUsers = async () => {
   try {
     const token = await getToken();
@@ -475,11 +499,9 @@ export const deleteUser = async (id: number) => {
     const data = await res.json();
     
     if (!res.ok) {
-      // Kiểm tra nếu lỗi liên quan đến người dùng đã có đơn hàng
       if (data.hasOrders) {
         const error = new Error(data.error || 'Không thể xóa user');
-        // Thêm thuộc tính hasOrders vào đối tượng error
-        (error as any).hasOrders = true;  
+        (error as any).hasOrders = true;
         throw error;
       } else {
         throw new Error(data.error || 'Không thể xóa user');
@@ -493,32 +515,55 @@ export const deleteUser = async (id: number) => {
   }
 };
 
-// Helper functions to convert status codes to text
-export const getOrderStatusText = (status: number): string => {
-  switch (status) {
-    case 0:
-      return 'Chờ xác nhận';
-    case 1:
-      return 'Đang vận chuyển';
-    case 2:
-      return 'Đã giao hàng';
-    case 3:
-      return 'Đã huỷ';
-    default:
-      return 'Không xác định';
+// API quản lý đánh giá
+export const fetchReviews = async () => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/admin/reviews`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải danh sách đánh giá');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch reviews error:', error);
+    throw error;
   }
 };
 
-export const getOrderStatusOptions = (): Array<{label: string, value: number}> => {
-  return [
-    { label: 'Tất cả', value: -1 },
-    { label: 'Chờ xác nhận', value: 0 },
-    { label: 'Đang vận chuyển', value: 1 },
-    { label: 'Đã giao hàng', value: 2 },
-    { label: 'Đã huỷ', value: 3 }
-  ];
+export const deleteReview = async (reviewId: number) => {
+  try {
+    const token = await getToken();
+    const res = await fetch(`${BASE_URL}/reviews/${reviewId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể xóa đánh giá');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Delete review error:', error);
+    throw error;
+  }
 };
 
+
+
+//Báo cáo
 export const fetchMonthlyRevenue = async () => {
   try {
     const token = await getToken();

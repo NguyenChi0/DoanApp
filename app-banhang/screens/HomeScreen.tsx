@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,7 @@ const HomeScreen: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState<number>(0);
+  const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
 
   // Array of banner images
   const bannerImages = [
@@ -70,6 +71,25 @@ const HomeScreen: React.FC = () => {
       setFilteredProducts(filtered);
     }
   }, [searchQuery, products]);
+
+  // Auto-scroll effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % bannerImages.length; // Loop back to 0
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({
+            x: nextIndex * width,
+            animated: true,
+          });
+        }
+        return nextIndex;
+      });
+    }, 3000); // Change every 3 seconds
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, [bannerImages.length]);
 
   const groupedProducts = filteredProducts.reduce((acc: { [key: string]: Product[] }, product) => {
     const category = product.category_name || 'Chưa phân loại';
@@ -135,6 +155,7 @@ const HomeScreen: React.FC = () => {
         {/* Banner Carousel */}
         <View style={styles.mainBannerContainer}>
           <ScrollView
+            ref={scrollViewRef} // Attach ref to ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -189,7 +210,7 @@ const styles = StyleSheet.create({
     height: 180,
     marginBottom: 15,
     overflow: 'hidden',
-    position: 'relative', // For positioning the dots
+    position: 'relative',
   },
   mainBannerImage: {
     width: width,

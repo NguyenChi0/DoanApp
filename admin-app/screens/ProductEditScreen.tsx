@@ -107,15 +107,15 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
       <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
         <Text style={styles.imagePickerText}>Chọn ảnh mới cho sản phẩm</Text>
       </TouchableOpacity>
-
+      <Text style={styles.mota}>Tên sản phẩm</Text>
       <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Tên sản phẩm" />
-
+      <Text style={styles.mota}>Mô tả sản phẩm</Text>
       <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Mô tả" multiline />
-
+      <Text style={styles.mota}>Giá</Text>
       <TextInput style={styles.input} value={price} onChangeText={setPrice} placeholder="Giá" keyboardType="numeric" />
-
+      <Text style={styles.mota}>Số lượng</Text>
       <TextInput style={styles.input} value={stock} onChangeText={setStock} placeholder="Số lượng tồn kho" keyboardType="numeric" />
-
+      <Text style={styles.mota}>Danh mục</Text>
       <View style={styles.pickerContainer}>
         <Picker selectedValue={categoryId} onValueChange={(itemValue) => setCategoryId(itemValue)} style={styles.input}>
           <Picker.Item label="Chọn danh mục" value="" />
@@ -137,15 +137,16 @@ const ProductEditScreen = ({ navigation, route }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16,backgroundColor:'#E3F2FD' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 8, marginBottom: 12, borderRadius: 4 },
   pickerContainer: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, marginBottom: 12 },
-  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 4, alignItems: 'center', marginBottom: 30 },
+  saveButton: { backgroundColor: '#007AFF', padding: 12, borderRadius: 30, alignItems: 'center', marginBottom: 30 },
   saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   imagePicker: { backgroundColor: '#ddd', padding: 10, borderRadius: 5, alignItems: 'center', marginBottom: 10 },
   imagePickerText: { color: '#333', fontSize: 16 },
-  previewImage: { width: 200, height: 200, alignSelf: 'center', marginBottom: 10 }
+  previewImage: { width: 200, height: 200, alignSelf: 'center', marginBottom: 10 },
+  mota: {color:'#2162d4', fontSize:18,margin:5,fontWeight:'bold'}
 });
 
 export default ProductEditScreen;

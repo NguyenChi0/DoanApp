@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUser } from '../services/api';
@@ -39,9 +39,11 @@ const AccountScreen: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [currentPassword, setCurrentPassword] = useState(''); // New state for current password
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false); // State for toggling current password visibility
 
   useEffect(() => {
     if (user) {
@@ -54,18 +56,18 @@ const AccountScreen: React.FC = () => {
   const handleUpdate = async () => {
     if (!token || !user) return;
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
+    // Require current password
+    if (!currentPassword) {
+      Alert.alert('Warning!', 'Vui lòng nhập mật khẩu hiện tại để cập nhật thông tin!');
       return;
     }
 
-    const updateData: any = {};
+    const updateData: any = { currentPassword }; // Include current password
     if (fullName) updateData.full_name = fullName;
-    if (email) updateData.email = email;
     if (address) updateData.address = address;
     if (password) updateData.password = password;
 
-    if (Object.keys(updateData).length === 0) {
+    if (Object.keys(updateData).length === 1 && !password) {
       Alert.alert('Thông báo', 'Không có thay đổi để cập nhật');
       return;
     }
@@ -73,13 +75,19 @@ const AccountScreen: React.FC = () => {
     setLoading(true);
     try {
       await updateUser(user.id, updateData);
-      setUser({ ...user, full_name: fullName, email, address });
+      setUser({ ...user, full_name: fullName, address });
       Alert.alert('Thành công', 'Thông tin tài khoản đã được cập nhật');
+      setCurrentPassword(''); // Clear current password
+      setPassword(''); // Clear new password
     } catch (error: any) {
-      Alert.alert('Lỗi', 'Email đã tồn tại!');
+      // Handle specific error for invalid password
+      const errorMessage =
+        error.response?.data?.error === 'Invalid current password'
+          ? 'Mật khẩu hiện tại không đúng'
+          : 'Đã có lỗi xảy ra khi cập nhật thông tin!';
+      Alert.alert('Lỗi', errorMessage);
     } finally {
       setLoading(false);
-      setPassword('');
     }
   };
 
@@ -89,13 +97,12 @@ const AccountScreen: React.FC = () => {
       'Bạn có chắc chắn muốn đăng xuất?',
       [
         { text: 'Hủy', style: 'cancel' },
-        { 
-          text: 'Đăng xuất', 
+        {
+          text: 'Đăng xuất',
           style: 'destructive',
           onPress: async () => {
             try {
               await logout();
-              // Reset navigation stack và chuyển đến màn hình Home
               navigation.reset({
                 index: 0,
                 routes: [{ name: 'Home' }],
@@ -103,8 +110,8 @@ const AccountScreen: React.FC = () => {
             } catch (error) {
               console.error('Logout error:', error);
             }
-          } 
-        }
+          },
+        },
       ]
     );
   };
@@ -114,10 +121,7 @@ const AccountScreen: React.FC = () => {
       <View style={styles.centeredContainer}>
         <Ionicons name="person-circle-outline" size={80} color="#4B0082" />
         <Text style={styles.errorText}>Vui lòng đăng nhập để chỉnh sửa thông tin</Text>
-        <TouchableOpacity 
-          style={styles.loginButton} 
-          onPress={() => navigation.navigate('Login')}
-        >
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
           <Text style={styles.loginButtonText}>Đăng Nhập</Text>
         </TouchableOpacity>
       </View>
@@ -125,22 +129,16 @@ const AccountScreen: React.FC = () => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Ionicons name="person-circle" size={80} color="#6A7BF7" />
           <Text style={styles.username}>{user?.username || 'Người dùng'}</Text>
         </View>
-        
+
         <View style={styles.formContainer}>
           <Text style={styles.title}>Thông tin tài khoản</Text>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Họ và tên</Text>
             <View style={styles.inputWrapper}>
@@ -154,23 +152,24 @@ const AccountScreen: React.FC = () => {
               />
             </View>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <View style={styles.inputWrapper}>
               <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: '#e8ecef' }]}
                 value={email}
-                onChangeText={setEmail}
+                editable={false}
                 placeholder="Nhập địa chỉ email"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholderTextColor="#999"
               />
             </View>
+            <Text style={styles.noteText}>Liên hệ hỗ trợ để thay đổi email</Text>
           </View>
-          
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Địa chỉ</Text>
             <View style={styles.inputWrapper}>
@@ -184,7 +183,32 @@ const AccountScreen: React.FC = () => {
               />
             </View>
           </View>
-          
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Mật khẩu hiện tại</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                placeholder="Nhập mật khẩu hiện tại"
+                secureTextEntry={!showCurrentPassword}
+                placeholderTextColor="#999"
+              />
+              <TouchableOpacity
+                style={styles.passwordIcon}
+                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+              >
+                <Ionicons
+                  name={showCurrentPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={22}
+                  color="#666"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Mật khẩu mới</Text>
             <View style={styles.inputWrapper}>
@@ -197,15 +221,8 @@ const AccountScreen: React.FC = () => {
                 secureTextEntry={!showPassword}
                 placeholderTextColor="#999"
               />
-              <TouchableOpacity 
-                style={styles.passwordIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons 
-                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
-                  size={22} 
-                  color="#666" 
-                />
+              <TouchableOpacity style={styles.passwordIcon} onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color="#666" />
               </TouchableOpacity>
             </View>
           </View>
@@ -222,10 +239,7 @@ const AccountScreen: React.FC = () => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutButtonText}>Đăng Xuất</Text>
           </TouchableOpacity>
         </View>
@@ -234,6 +248,7 @@ const AccountScreen: React.FC = () => {
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -363,6 +378,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  noteText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    marginLeft: 12,
   },
 });
 

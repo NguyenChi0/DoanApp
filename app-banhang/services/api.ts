@@ -92,7 +92,7 @@ export const login = async (username: string, password: string) => {
   return response.data;
 };
 
-export const updateUser = async (id: number, userData: Partial<UserData>) => {
+export const updateUser = async (id: number, userData: Partial<UserData> & { currentPassword?: string }) => {
   const response = await authAxios.put(`/users/${id}`, userData);
   return response.data;
 };
@@ -164,3 +164,4 @@ export const deleteReview = async (reviewId: number) => {
   const response = await authAxios.delete(`/reviews/${reviewId}`);
   return response.data;
 };
+

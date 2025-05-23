@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import { fetchMonthlyRevenue } from '../api';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 type RevenueReportScreenNavigationProp = StackNavigationProp<RootStackParamList, 'RevenueReport'>;
 
@@ -24,14 +25,13 @@ const RevenueReportScreen = ({ navigation }: Props) => {
     const loadRevenueData = async () => {
       try {
         const data = await fetchMonthlyRevenue();
-        // Format data to match RevenueData structure
         const formattedData: RevenueData[] = data.map((item: { year: number; month: number; revenue: number }) => ({
-          monthYear: `${item.month}/${item.year}`, // Format: MM/YYYY
+          monthYear: `${item.month}/${item.year}`,
           total: item.revenue,
         })).sort((a, b) => {
           const [aMonth, aYear] = a.monthYear.split('/').map(Number);
           const [bMonth, bYear] = b.monthYear.split('/').map(Number);
-          return bYear - aYear || bMonth - aMonth; // Sort by year descending, then month descending
+          return bYear - aYear || bMonth - aMonth;
         });
         setRevenueData(formattedData);
       } catch (err: any) {
@@ -49,6 +49,7 @@ const RevenueReportScreen = ({ navigation }: Props) => {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#2196F3" />
+        <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
       </View>
     );
   }
@@ -56,6 +57,7 @@ const RevenueReportScreen = ({ navigation }: Props) => {
   if (error) {
     return (
       <View style={styles.container}>
+        <Icon name="warning" size={50} color="#999" />
         <Text style={styles.noData}>Lỗi: {error}</Text>
       </View>
     );
@@ -63,9 +65,12 @@ const RevenueReportScreen = ({ navigation }: Props) => {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Báo cáo Doanh thu Theo Tháng</Text>
+      <Text style={styles.header}>BÁO CÁO DOANH THU THEO THÁNG</Text>
       {revenueData.length === 0 ? (
-        <Text style={styles.noData}>Không có dữ liệu doanh thu</Text>
+        <View style={styles.emptyContainer}>
+          <Icon name="bar-chart" size={50} color="#999" />
+          <Text style={styles.noData}>Không có dữ liệu doanh thu</Text>
+        </View>
       ) : (
         <View style={styles.table}>
           <View style={styles.tableHeader}>
@@ -87,28 +92,45 @@ const RevenueReportScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     padding: 20,
+    backgroundColor: '#E3F2FD',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E88E5',
     textAlign: 'center',
     marginBottom: 20,
+    textTransform: 'uppercase',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
   },
   noData: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 10,
     textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
   },
   table: {
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 12,
+    elevation: 4,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowRadius: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+    marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',

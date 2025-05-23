@@ -14,7 +14,8 @@ import {
   Platform,
   KeyboardAvoidingView,
   Switch,
-  KeyboardType
+  ActivityIndicator,
+  TextInputProps, // Thêm import này
 } from 'react-native';
 import { fetchUsers, addUser, updateUser, deleteUser } from '../api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -33,6 +34,7 @@ const UserManagementScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [newUser, setNewUser] = useState({
     username: '',
     password: '',
@@ -49,10 +51,13 @@ const UserManagementScreen: React.FC = () => {
 
   const fetchUserList = async () => {
     try {
+      setLoading(true);
       const data = await fetchUsers();
       setUsers(data);
     } catch (error: any) {
       Alert.alert('Lỗi', error.message || 'Không thể tải danh sách user');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -127,7 +132,6 @@ const UserManagementScreen: React.FC = () => {
             Alert.alert('Thành công', 'Xóa user thành công');
             fetchUserList();
           } catch (error: any) {
-            // Kiểm tra nếu lỗi liên quan đến user đã có đơn hàng
             if (error.hasOrders) {
               Alert.alert(
                 'Không thể xóa',
@@ -165,33 +169,13 @@ const UserManagementScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  const renderItem = ({ item }: { item: User }) => (
-    <View style={styles.item}>
-      <View style={styles.userInfo}>
-        <Text style={styles.itemText}>Username: {item.username}</Text>
-        <Text style={styles.itemText}>Email: {item.email}</Text>
-        <Text style={styles.itemText}>Họ tên: {item.full_name || 'N/A'}</Text>
-        <Text style={styles.itemText}>Địa chỉ: {item.address || 'N/A'}</Text>
-        <Text style={styles.itemText}>Vai trò: {item.role === 1 ? 'Admin' : 'User'}</Text>
-      </View>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={[styles.iconButton, styles.editButton]} onPress={() => openEditModal(item)}>
-          <Icon name="edit" size={18} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconButton, styles.deleteButton]} onPress={() => handleDeleteUser(item.id)}>
-          <Icon name="delete" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   const InputField = ({ 
     label, 
     placeholder, 
     value, 
     onChangeText, 
     secureTextEntry = false, 
-    keyboardType = 'default' as KeyboardType,
+    keyboardType = 'default' as TextInputProps['keyboardType'],
     error = '',
     required = false
   }) => (
@@ -207,21 +191,65 @@ const UserManagementScreen: React.FC = () => {
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
+        placeholderTextColor="#999"
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 
+  const renderItem = ({ item }: { item: User }) => (
+    <View style={styles.item}>
+      <View style={styles.userInfo}>
+        <View style={styles.userRow}>
+          <Icon name="person" size={18} color="#666" style={styles.icon} />
+          <Text style={styles.usernameText}>{item.username}</Text>
+        </View>
+        <Text style={styles.itemText}>Email: {item.email}</Text>
+        <Text style={styles.itemText}>Họ tên: {item.full_name || 'N/A'}</Text>
+        <Text style={styles.itemText}>Địa chỉ: {item.address || 'N/A'}</Text>
+        <View style={styles.roleRow}>
+          <Icon name={item.role === 1 ? 'admin-panel-settings' : 'person-outline'} size={18} color="#666" style={styles.icon} />
+          <Text style={styles.itemText}>Vai trò: {item.role === 1 ? 'Admin' : 'User'}</Text>
+        </View>
+      </View>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity style={[styles.iconButton, styles.editButton]} onPress={() => openEditModal(item)} activeOpacity={0.7}>
+          <Icon name="edit" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.iconButton, styles.deleteButton]} onPress={() => handleDeleteUser(item.id)} activeOpacity={0.7}>
+          <Icon name="delete" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="person-off" size={50} color="#999" />
+      <Text style={styles.emptyText}>Không có user nào hoặc phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <FlatList
-        data={users}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={<Text style={styles.emptyText}>Không có user nào hoặc phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</Text>}
-      />
+      <Text style={styles.header}>Quản lý Người dùng</Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      ) : users.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <FlatList
+          data={users}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+        />
+      )}
       
-      <TouchableOpacity style={styles.fabButton} onPress={openAddModal}>
+      <TouchableOpacity style={styles.fabButton} onPress={openAddModal} activeOpacity={0.7}>
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
@@ -239,7 +267,7 @@ const UserManagementScreen: React.FC = () => {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{isEditing ? 'Sửa thông tin user' : 'Thêm tài khoản mới'}</Text>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <TouchableOpacity onPress={() => setModalVisible(false)} activeOpacity={0.7}>
                   <Icon name="close" size={24} color="#333" />
                 </TouchableOpacity>
               </View>
@@ -254,7 +282,7 @@ const UserManagementScreen: React.FC = () => {
                     label="Username"
                     placeholder="Nhập username"
                     value={newUser.username}
-                    onChangeText={(text) => setNewUser({ ...newUser, username: text })}
+                    onChangeText={text => setNewUser({ ...newUser, username: text })}
                     error={errors.username}
                     required={true}
                   />
@@ -263,7 +291,7 @@ const UserManagementScreen: React.FC = () => {
                     label="Password"
                     placeholder={isEditing ? "Nhập để thay đổi password" : "Nhập password"}
                     value={newUser.password}
-                    onChangeText={(text) => setNewUser({ ...newUser, password: text })}
+                    onChangeText={text => setNewUser({ ...newUser, password: text })}
                     secureTextEntry={true}
                     error={errors.password}
                     required={!isEditing}
@@ -273,7 +301,7 @@ const UserManagementScreen: React.FC = () => {
                     label="Email"
                     placeholder="example@email.com"
                     value={newUser.email}
-                    onChangeText={(text) => setNewUser({ ...newUser, email: text })}
+                    onChangeText={text => setNewUser({ ...newUser, email: text })}
                     keyboardType="email-address" 
                     error={errors.email}
                     required={true}
@@ -287,14 +315,14 @@ const UserManagementScreen: React.FC = () => {
                     label="Họ và tên"
                     placeholder="Nhập họ và tên"
                     value={newUser.full_name}
-                    onChangeText={(text) => setNewUser({ ...newUser, full_name: text })}
+                    onChangeText={text => setNewUser({ ...newUser, full_name: text })}
                   />
                   
                   <InputField
                     label="Địa chỉ"
                     placeholder="Nhập địa chỉ"
                     value={newUser.address}
-                    onChangeText={(text) => setNewUser({ ...newUser, address: text })}
+                    onChangeText={text => setNewUser({ ...newUser, address: text })}
                   />
                 </View>
 
@@ -307,7 +335,7 @@ const UserManagementScreen: React.FC = () => {
                       trackColor={{ false: "#d1d1d1", true: "#81b0ff" }}
                       thumbColor={newUser.role === 1 ? "#2196F3" : "#f4f3f4"}
                       ios_backgroundColor="#d1d1d1"
-                      onValueChange={(value) => setNewUser({ ...newUser, role: value ? 1 : 0 })}
+                      onValueChange={value => setNewUser({ ...newUser, role: value ? 1 : 0 })}
                       value={newUser.role === 1}
                     />
                   </View>
@@ -325,6 +353,7 @@ const UserManagementScreen: React.FC = () => {
                 <TouchableOpacity 
                   style={[styles.button, styles.cancelButton]} 
                   onPress={() => setModalVisible(false)}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.cancelButtonText}>Hủy bỏ</Text>
                 </TouchableOpacity>
@@ -332,6 +361,7 @@ const UserManagementScreen: React.FC = () => {
                 <TouchableOpacity
                   style={[styles.button, styles.submitButton]}
                   onPress={isEditing ? handleUpdateUser : handleAddUser}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.submitButtonText}>
                     {isEditing ? 'Cập nhật' : 'Thêm user'}
@@ -349,31 +379,80 @@ const UserManagementScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 50,
-    paddingBottom :30,
+    padding: 20,
+    backgroundColor: '#E3F2FD',
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E88E5',
+    textAlign: 'center',
+    marginBottom: 20,
+    textTransform: 'uppercase',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 10,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   item: {
     backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 8,
-    borderRadius: 8,
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
   },
   userInfo: {
     flex: 1,
   },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  usernameText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
   itemText: {
     fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
+    color: '#555',
+    marginBottom: 6,
   },
   actionButtons: {
     flexDirection: 'column',
@@ -381,43 +460,35 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   editButton: {
     backgroundColor: '#2196F3',
   },
   deleteButton: {
-    backgroundColor: '#ff4444',
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
+    backgroundColor: '#F44336',
   },
   fabButton: {
     position: 'absolute',
-    width: 56,
-    height: 56,
+    width: 60,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'center',
     right: 20,
     bottom: 20,    
     backgroundColor: '#4CAF50',
-    borderRadius: 28,
+    borderRadius: 30,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowRadius: 4,
   },
-  
-  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -425,30 +496,36 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 12,
+    marginHorizontal: 20,
+    marginVertical: 40,
+    borderRadius: 16,
     overflow: 'hidden',
-    maxHeight: '90%',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: '#F5F5F5',
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#333',
   },
   modalDivider: {
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#E0E0E0',
     width: '100%',
   },
   formContainer: {
-    maxHeight: 500,
     padding: 16,
+    maxHeight: '80%',
   },
   formSection: {
     marginBottom: 20,
@@ -456,7 +533,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#555',
+    color: '#1E88E5',
     marginBottom: 12,
   },
   inputContainer: {
@@ -464,30 +541,32 @@ const styles = StyleSheet.create({
   },
   labelContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 6,
   },
   inputLabel: {
     fontSize: 14,
-    color: '#555',
     fontWeight: '500',
+    color: '#333',
   },
   requiredStar: {
-    color: '#ff4444',
+    color: '#F44336',
     marginLeft: 4,
+    fontSize: 14,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FAFAFA',
   },
   inputError: {
-    borderColor: '#ff4444',
+    borderColor: '#F44336',
   },
   errorText: {
-    color: '#ff4444',
+    color: '#F44336',
     fontSize: 12,
     marginTop: 4,
   },
@@ -499,27 +578,30 @@ const styles = StyleSheet.create({
   },
   roleLabel: {
     fontSize: 16,
-    color: '#555',
+    fontWeight: '500',
+    color: '#333',
   },
   roleHint: {
     fontSize: 12,
     color: '#777',
     marginTop: 4,
+    lineHeight: 18,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
+    backgroundColor: '#F5F5F5',
   },
   button: {
     flex: 1,
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#E0E0E0',
     marginRight: 8,
   },
   submitButton: {
@@ -527,7 +609,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButtonText: {
-    color: '#555',
+    color: '#333',
     fontWeight: '600',
     fontSize: 16,
   },
@@ -535,6 +617,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  list: {
+    paddingBottom: 80,
   },
 });
 

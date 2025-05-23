@@ -833,6 +833,30 @@ app.delete('/reviews/:id', authenticate, (req, res) => {
   );
 });
 
+app.get('/admin/reviews', authenticate, (req, res) => {
+  if (req.userRole !== 1) {
+    return res.status(403).json({ message: 'Chỉ admin mới có quyền truy cập' });
+  }
+
+  const query = `
+    SELECT r.id, r.rating, r.comment, r.created_at, 
+           u.id as user_id, u.username, u.full_name,
+           p.id as product_id, p.name as product_name
+    FROM reviews r
+    JOIN users u ON r.user_id = u.id
+    JOIN products p ON r.product_id = p.id
+    ORDER BY r.created_at DESC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching all reviews:', err);
+      return res.status(500).json({ message: 'Đã xảy ra lỗi khi tải đánh giá' });
+    }
+    res.json(results);
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server chạy tại http://localhost:${port}`);
 });

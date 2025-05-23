@@ -8,12 +8,12 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
-  Modal
+  Modal,
 } from 'react-native';
-import { fetchCategories, addCategory, updateCategory, deleteCategory, getToken } from '../api';
+import { fetchCategories, addCategory, updateCategory, deleteCategory } from '../api';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { TabParamList } from '../App';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 type CategoriesManagementNavigationProp = BottomTabNavigationProp<TabParamList, 'CategoriesManagement'>;
 
@@ -126,51 +126,63 @@ const CategoriesManagement = ({ navigation }: Props) => {
     setModalVisible(true);
   };
 
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#0000ff" />
+  const renderCategory = ({ item }: { item: Category }) => (
+    <View style={styles.categoryContainer}>
+      <View style={styles.categoryHeader}>
+        <Text style={styles.categoryName}>{item.name}</Text>
       </View>
-    );
-  }
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => openEditModal(item)}
+          activeOpacity={0.7}
+        >
+          <Icon name="edit" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Sửa</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteCategory(item.id, item.name)}
+          activeOpacity={0.7}
+        >
+          <Icon name="trash" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Xóa</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="list" size={50} color="#999" />
+      <Text style={styles.emptyText}>Không có danh mục nào</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Quản lý danh mục</Text>
+      <Text style={styles.header}>Quản lý Danh mục</Text>
 
-      <FlatList
-        data={categories}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text style={styles.name}>{item.name}</Text>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={[styles.iconButton, styles.editButton]}
-                onPress={() => openEditModal(item)}
-              >
-                <Icon name="edit" size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.iconButton, styles.deleteButton]}
-                onPress={() => handleDeleteCategory(item.id, item.name)}
-              >
-                <Icon name="delete" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        refreshing={isRefreshing}
-        onRefresh={() => loadCategories(true)}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Không có danh mục nào</Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+        </View>
+      ) : categories.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <FlatList
+          data={categories}
+          renderItem={renderCategory}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          refreshing={isRefreshing}
+          onRefresh={() => loadCategories(true)}
+        />
+      )}
 
       <TouchableOpacity style={styles.fab} onPress={openAddModal}>
-        <Icon name="add" size={24} color="#fff" />
+        <Icon name="plus" size={24} color="#fff" />
       </TouchableOpacity>
 
       <Modal
@@ -192,14 +204,16 @@ const CategoriesManagement = ({ navigation }: Props) => {
             />
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setModalVisible(false)}
+                activeOpacity={0.7}
               >
                 <Text style={styles.buttonText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
+                style={[styles.modalButton, styles.saveButton]}
                 onPress={selectedCategory ? handleUpdateCategory : handleAddCategory}
+                activeOpacity={0.7}
               >
                 <Text style={styles.buttonText}>Lưu</Text>
               </TouchableOpacity>
@@ -214,88 +228,107 @@ const CategoriesManagement = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    padding: 20,
+    backgroundColor: '#E3F2FD',
   },
-  centerContent: {
+  header: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1E88E5',
+    textAlign: 'center',
+    marginBottom: 20,
+    textTransform: 'uppercase',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
-  item: {
-    padding: 16,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#999',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  categoryContainer: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 16,
+    padding: 15,
+    marginBottom: 15,
+    borderRadius: 12,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
   },
-  name: {
+  categoryHeader: {
+    marginBottom: 10,
+  },
+  categoryName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#333',
   },
-  actions: {
+  buttonContainer: {
     flexDirection: 'row',
-  },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
+    justifyContent: 'flex-end',
   },
   editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#2196F3',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    elevation: 2,
+    marginRight: 10,
   },
   deleteButton: {
-    backgroundColor: '#f44336',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F44336',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 14,
+    marginLeft: 5,
   },
-  emptyContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
+  list: {
+    paddingBottom: 20,
   },
   fab: {
     position: 'absolute',
-    bottom: 16,
-    right: 16,
+    bottom: 20,
+    right: 20,
     backgroundColor: '#4CAF50',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5,
   },
   modalContainer: {
     flex: 1,
@@ -306,12 +339,18 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 8,
+    borderRadius: 12,
     width: '80%',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -322,13 +361,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 15,
     borderRadius: 8,
+    fontSize: 16,
+    color: '#333',
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    elevation: 2,
+  },
   cancelButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#F44336',
+    marginRight: 10,
   },
   saveButton: {
     backgroundColor: '#4CAF50',
