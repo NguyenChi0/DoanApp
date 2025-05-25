@@ -561,7 +561,126 @@ export const deleteReview = async (reviewId: number) => {
   }
 };
 
+// Quản lý voucher
+export const fetchVouchers = async () => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+    
+    const res = await fetch(`${BASE_URL}/vouchers`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể tải danh sách voucher');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Fetch vouchers error:', error);
+    throw error;
+  }
+};
 
+export const addVoucher = async (voucher: {
+  code: string;
+  discount: number;
+  expires_at?: string;
+}) => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+    
+    const res = await fetch(`${BASE_URL}/vouchers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(voucher),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể thêm voucher');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Add voucher error:', error);
+    throw error;
+  }
+};
+
+export const updateVoucher = async (id: number, voucher: {
+  code: string;
+  discount: number;
+  is_active: number;
+  expires_at?: string;
+}) => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+    
+    const res = await fetch(`${BASE_URL}/vouchers/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(voucher),
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể cập nhật voucher');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Update voucher error:', error);
+    throw error;
+  }
+};
+
+export const deleteVoucher = async (id: number) => {
+  try {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Phiên đăng nhập hết hạn');
+    }
+    
+    const res = await fetch(`${BASE_URL}/vouchers/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(data.error || 'Không thể xóa voucher');
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error('Delete voucher error:', error);
+    throw error;
+  }
+};
 
 //Báo cáo
 export const fetchMonthlyRevenue = async () => {

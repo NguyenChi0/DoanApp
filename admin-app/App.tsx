@@ -15,6 +15,7 @@ import OrderDetailScreen from './screens/OrderDetailScreen';
 import RevenueReportScreen from './screens/RevenueReportScreen';
 import UserManagementScreen from './screens/UserManagementScreen';
 import ReviewManagementScreen from './screens/ReviewManagementScreen';
+import VoucherManagementScreen from './screens/VoucherManagementScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   RevenueReport: undefined;
   UserManagement: undefined;
   ReviewManagement: undefined;
+  VoucherManagement: undefined;
 };
 
 export type TabParamList = {
@@ -35,6 +37,7 @@ export type TabParamList = {
   RevenueReport: undefined;
   UserManagement: undefined;
   ReviewManagement: undefined;
+  VoucherManagement: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -107,6 +110,15 @@ function MainTabs() {
         options={{ 
           title: 'Đánh giá', 
           tabBarIcon: ({ color, size }) => <Icon name="star" color={color} size={size} />,
+          headerShown: false,
+        }} 
+      />
+      <Tab.Screen 
+        name="VoucherManagement" 
+        component={VoucherManagementScreen} 
+        options={{ 
+          title: 'Voucher', 
+          tabBarIcon: ({ color, size }) => <Icon name="ticket" color={color} size={size} />,
           headerShown: false,
         }} 
       />
@@ -191,6 +203,13 @@ export default function App(): React.ReactElement {
             component={ReviewManagementScreen} 
             options={{
               title: 'Quản lý đánh giá',
+            }}
+          />
+          <Stack.Screen 
+            name="VoucherManagement" 
+            component={VoucherManagementScreen} 
+            options={{
+              title: 'Quản lý voucher',
             }}
           />
         </Stack.Navigator>

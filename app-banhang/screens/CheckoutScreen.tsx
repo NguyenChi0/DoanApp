@@ -35,8 +35,11 @@ const CheckoutScreen: React.FC = () => {
   const { token } = useAuth();
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [voucherCode, setVoucherCode] = useState('');
+  const [discount, setDiscount] = useState<number>(0); // Explicitly type as number
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = subtotal - discount;
 
   const handleCheckout = async () => {
     if (!token) {
@@ -62,16 +65,26 @@ const CheckoutScreen: React.FC = () => {
     }
 
     try {
-      await createOrder(address, phoneNumber, cartItems);
-      Alert.alert('Thành công', 'Đặt hàng thành công!', [
-        { text: 'OK', onPress: () => {
-          setCartItems([]);
-          navigation.navigate('Tabs');
-        }}
-      ]);
-    } catch (error) {
+      const response = await createOrder(address, phoneNumber, cartItems, voucherCode);
+      // Ensure discount is a number, default to 0 if undefined or null
+      const discountApplied = Number(response.discountApplied) || 0;
+      setDiscount(discountApplied);
+      Alert.alert(
+        'Thành công', 
+        `Đặt hàng thành công!${discountApplied > 0 ? ` (Giảm giá: $${discountApplied.toFixed(2)})` : ''}`, 
+        [
+          { 
+            text: 'OK', 
+            onPress: () => {
+              setCartItems([]);
+              navigation.navigate('Tabs');
+            }
+          }
+        ]
+      );
+    } catch (error: any) {
       console.error('Error placing order:', error);
-      Alert.alert('Lỗi', 'Đặt hàng thất bại. Vui lòng thử lại.');
+      Alert.alert('Lỗi', error.response?.data?.error || 'Đặt hàng thất bại. Vui lòng thử lại.');
     }
   };
 
@@ -113,6 +126,16 @@ const CheckoutScreen: React.FC = () => {
           onChangeText={setPhoneNumber}
           keyboardType="phone-pad"
         />
+        <TextInput
+          style={styles.input}
+          placeholder="Mã voucher (6 ký tự)"
+          value={voucherCode}
+          onChangeText={setVoucherCode}
+          maxLength={6}
+          autoCapitalize="characters"
+        />
+        <Text style={styles.totals}>Tổng phụ: ${subtotal.toFixed(2)}</Text>
+        {discount > 0 && <Text style={styles.discount}>Giảm giá: ${(Number(discount) || 0).toFixed(2)}</Text>}
         <Text style={styles.totals}>Tổng cộng: ${total.toFixed(2)}</Text>
         <TouchableOpacity
           style={[styles.checkoutButton, cartItems.length === 0 && styles.checkoutButtonDisabled]}
@@ -126,6 +149,7 @@ const CheckoutScreen: React.FC = () => {
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -212,6 +236,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f2937',
     marginVertical: 8,
+  },
+  discount: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#dc2626',
+    marginVertical: 4,
   },
   checkoutButton: {
     backgroundColor: '#4B0082',

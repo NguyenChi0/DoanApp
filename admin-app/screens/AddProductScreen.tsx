@@ -198,7 +198,7 @@ const AddProductScreen = ({ navigation }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor:'#E3F2FD' },
+  container: { flex: 1, padding: 16, backgroundColor:'#E3F2FD  ' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign:'center'},
   input: {
