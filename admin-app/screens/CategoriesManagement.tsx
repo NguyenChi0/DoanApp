@@ -106,7 +106,7 @@ const CategoriesManagement = ({ navigation }: Props) => {
               Alert.alert('Thành công', 'Đã xóa danh mục');
               loadCategories();
             } catch (error: any) {
-              Alert.alert('Lỗi xóa', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để xóa sản phẩm');
+              Alert.alert('Không xóa được', 'Hết thời gian đăng nhập hoặc danh mục đang chứa sản phẩm, không thể xóa');
             }
           },
         },

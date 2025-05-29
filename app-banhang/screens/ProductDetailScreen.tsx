@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   addToCartButtonInline: {
     backgroundColor: '#6A5ACD',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 30,
     marginTop: 10,
     alignItems: 'center',
     justifyContent: 'center',

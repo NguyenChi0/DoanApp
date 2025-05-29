@@ -55,7 +55,7 @@ const CartScreen: React.FC = () => {
           onPress={() => navigation.navigate('CheckoutScreen')}
           disabled={cartItems.length === 0}
         >
-          <Text style={styles.checkoutButtonText}>Thanh Toán Ngay</Text>
+          <Text style={styles.checkoutButtonText}>Đặt hàng ngay</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   checkoutButton: {
     backgroundColor: '#4B0082',
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 30,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#4B0082',

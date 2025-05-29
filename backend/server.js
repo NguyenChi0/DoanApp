@@ -60,29 +60,6 @@ const isAdmin = (req, res, next) => {
   }
   next();
 };
-
-// Register endpoint
-app.post('/register', (req, res) => {
-  const { username, password, email, full_name, address } = req.body;
-  if (!username || !password || !email) {
-    return res.status(400).json({ error: 'Username, password, and email are required' });
-  }
-  db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, results) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    if (results.length > 0) return res.status(400).json({ error: 'Username or email already exists' });
-    bcrypt.hash(password, 10, (err, hashedPassword) => {
-      if (err) return res.status(500).json({ error: 'Error hashing password' });
-      db.query('INSERT INTO users (username, password, email, full_name, address) VALUES (?, ?, ?, ?, ?)',
-        [username, hashedPassword, email, full_name || null, address || null],
-        (err, result) => {
-          if (err) return res.status(500).json({ error: 'Error creating user' });
-          res.status(201).json({ message: 'User created successfully' });
-        }
-      );
-    });
-  });
-});
-
 // Login endpoint
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
@@ -106,6 +83,28 @@ app.post('/login', (req, res) => {
           role: user.role 
         } 
       });
+    });
+  });
+});
+
+// Register endpoint
+app.post('/register', (req, res) => {
+  const { username, password, email, full_name, address } = req.body;
+  if (!username || !password || !email) {
+    return res.status(400).json({ error: 'Username, password, and email are required' });
+  }
+  db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length > 0) return res.status(400).json({ error: 'Username or email already exists' });
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) return res.status(500).json({ error: 'Error hashing password' });
+      db.query('INSERT INTO users (username, password, email, full_name, address) VALUES (?, ?, ?, ?, ?)',
+        [username, hashedPassword, email, full_name || null, address || null],
+        (err, result) => {
+          if (err) return res.status(500).json({ error: 'Error creating user' });
+          res.status(201).json({ message: 'User created successfully' });
+        }
+      );
     });
   });
 });

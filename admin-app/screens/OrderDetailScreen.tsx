@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp } from '@react-navigation/native'; // Add this import
+import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import { fetchOrderDetails, updateOrderStatus, getOrderStatusText } from '../api';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Added for FAB icon
 
 // Define navigation and route types
 type OrderDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'OrderDetail'>;
@@ -109,62 +110,73 @@ const OrderDetailScreen = ({ navigation, route }: Props) => {
   const canCancel = status !== 2 && status !== 3;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.title}>Chi tiết đơn hàng #{orderDetail.order.id}</Text>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>Khách hàng: {orderDetail.order.user_name}</Text>
-        <Text style={styles.infoText}>Địa chỉ: {orderDetail.order.address}</Text>
-        <Text style={styles.infoText}>SĐT: {orderDetail.order.phone_number || 'Không có'}</Text>
-        <Text style={styles.infoText}>Tổng giá: {orderDetail.order.total_price.toLocaleString('vi-VN')}₫</Text>
-        <Text style={styles.infoText}>
-          Trạng thái: <Text style={getStatusStyle(orderDetail.order.status)}>
-            {getOrderStatusText(orderDetail.order.status)}
-          </Text>
-        </Text>
-      </View>
-
-      <Text style={styles.subtitle}>Danh sách sản phẩm:</Text>
-      {orderDetail.items.map((item, index) => (
-        <View key={index} style={styles.item}>
-          <Text style={styles.itemText}>{item.product_name}</Text>
-          <Text style={styles.itemDetail}>
-            Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.title}>Chi tiết đơn hàng #{orderDetail.order.id}</Text>
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoText}>Khách hàng: {orderDetail.order.user_name}</Text>
+          <Text style={styles.infoText}>Địa chỉ: {orderDetail.order.address}</Text>
+          <Text style={styles.infoText}>SĐT: {orderDetail.order.phone_number || 'Không có'}</Text>
+          <Text style={styles.infoText}>Tổng giá: {orderDetail.order.total_price.toLocaleString('vi-VN')}₫</Text>
+          <Text style={styles.infoText}>
+            Trạng thái: <Text style={getStatusStyle(orderDetail.order.status)}>
+              {getOrderStatusText(orderDetail.order.status)}
+            </Text>
           </Text>
         </View>
-      ))}
 
-      <View style={styles.buttonContainer}>
-        {canChangeToShipping && (
-          <TouchableOpacity
-            style={[styles.button, styles.shippingButton]}
-            onPress={confirmUpdateToShipping}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.subtitle}>Danh sách sản phẩm:</Text>
+        {orderDetail.items.map((item, index) => (
+          <View key={index} style={styles.item}>
+            <Text style={styles.itemText}>{item.product_name}</Text>
+            <Text style={styles.itemDetail}>
+              Số lượng: {item.quantity} - Giá: {item.price.toLocaleString('vi-VN')}₫
+            </Text>
+          </View>
+        ))}
 
-        {canChangeToDelivered && (
-          <TouchableOpacity
-            style={[styles.button, styles.deliveredButton]}
-            onPress={confirmUpdateToDelivered}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.buttonContainer}>
+          {canChangeToShipping && (
+            <TouchableOpacity
+              style={[styles.button, styles.shippingButton]}
+              onPress={confirmUpdateToShipping}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>Đánh dấu đang vận chuyển</Text>
+            </TouchableOpacity>
+          )}
 
-        {canCancel && (
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={confirmCancelOrder}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>Huỷ đơn hàng</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </ScrollView>
+          {canChangeToDelivered && (
+            <TouchableOpacity
+              style={[styles.button, styles.deliveredButton]}
+              onPress={confirmUpdateToDelivered}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>Đánh dấu đã giao hàng</Text>
+            </TouchableOpacity>
+          )}
+
+          {canCancel && (
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={confirmCancelOrder}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>Huỷ đơn hàng</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Add FAB for creating voucher */}
+      <TouchableOpacity 
+        style={styles.fab} 
+        onPress={() => navigation.navigate('VoucherManagement')}
+        activeOpacity={0.7}
+      >
+        <Icon name="local-offer" size={24} color="#fff" />
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -190,7 +202,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 16,
-    paddingBottom: 20,
+    paddingBottom: 80, // Increased to prevent FAB overlap
   },
   loadingText: {
     fontSize: 16,
@@ -271,6 +283,23 @@ const styles = StyleSheet.create({
   statusCancelled: {
     color: '#F44336',
     fontWeight: 'bold',
+  },
+  // FAB styles from VoucherManagementScreen
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: '#4CAF50',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
 

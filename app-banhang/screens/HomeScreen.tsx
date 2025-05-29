@@ -9,6 +9,7 @@ import {
   ScrollView,
   TextInput,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,6 +39,7 @@ const HomeScreen: React.FC = () => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState<number>(0);
+  const [showAdModal, setShowAdModal] = useState<boolean>(true); // State for ad modal visibility
   const scrollViewRef = useRef<ScrollView>(null); // Ref for ScrollView
 
   // Array of banner images
@@ -46,6 +48,9 @@ const HomeScreen: React.FC = () => {
     require('../images/image2.png'),
     require('../images/image3.png'),
   ];
+
+  // Advertisement image
+  const adImage = require('../images/quangcao.png');
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -116,7 +121,12 @@ const HomeScreen: React.FC = () => {
           {item.name}
         </Text>
         <View style={styles.priceContainer}>
-          <Text style={styles.productPrice}>${item.price}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.productPrice}>${item.price}</Text>
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>-20%</Text>
+            </View>
+          </View>
           <Text style={styles.originalPrice}>${(item.price * 1.2).toFixed(2)}</Text>
         </View>
       </View>
@@ -145,6 +155,30 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Advertisement Modal */}
+      <Modal
+        visible={showAdModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAdModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.adContainer}>
+            <Image
+              source={adImage}
+              style={styles.adImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowAdModal(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <TextInput
         style={styles.searchInput}
         placeholder="🔍 Tìm kiếm sản phẩm..."
@@ -207,7 +241,7 @@ const styles = StyleSheet.create({
   },
   mainBannerContainer: {
     width: width,
-    height: 180,
+    height: 270,
     marginBottom: 15,
     overflow: 'hidden',
     position: 'relative',
@@ -246,8 +280,6 @@ const styles = StyleSheet.create({
     width: 200,
     alignItems: 'center',
     elevation: 5,
-    borderColor: '#ff00ff',
-    borderWidth: 2,
     overflow: 'hidden',
   },
   imageContainer: {
@@ -291,17 +323,68 @@ const styles = StyleSheet.create({
     marginTop: 8,
     justifyContent: 'center',
   },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   productPrice: {
     fontSize: 18,
-    color: '#FF4500',
+    color: 'green',
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginRight: 8,
+  },
+  discountBadge: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  discountText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   originalPrice: {
     fontSize: 14,
-    color: '#888',
+    color: 'red',
     textDecorationLine: 'line-through',
     marginBottom: 4,
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adContainer: {
+    width: width ,
+    height: width * 0.7 ,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  adImage: {
+    width: '100%',
+    height: '100%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 
